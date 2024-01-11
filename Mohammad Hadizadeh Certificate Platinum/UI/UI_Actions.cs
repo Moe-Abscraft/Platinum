@@ -11,8 +11,43 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         public static readonly Dictionary<string, uint> PopupsJoinGroup = new Dictionary<string, uint>()
         {
             {"ClosePopUps", 25},
-            {"Keypad", 12}
+            {"Message_Pop", 11},
+            {"Message_KP", 12}
         };
+
+        public enum DigitalJoins
+        {
+            VPubLoginEnter = 20,
+            VPubLoginAck = 21,
+        }
+        
+        public enum VisibilityJoins
+        {
+            VPubLoginOK = 7,
+        }
+        
+        public enum SerialJoins
+        {
+            Date = 1,
+            Time = 2,
+            SpaceId = 3,
+            Decorator = 4,
+            OsVersion = 5,
+            IpAddress = 6,
+            MacAddress = 7,
+            StorefrontAvailable = 8,
+            StorefrontTotal = 9,
+            MarketItemAvailable = 10,
+            KeypadInput = 11,
+        }
+
+        public enum SubpageJoin
+        {
+            VpubLogin = 12,
+            VPubLoginKeypad = 12,
+            VPubLoginMessage = 11,
+            OperatingPage = 13,
+        }
         
         public static void TogglePopup(BasicTriListWithSmartObject tp, uint join)
         {

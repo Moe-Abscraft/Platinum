@@ -15,7 +15,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         private DateTime _now = DateTime.Now;
         private CTimer _timer;
         
-        private CardReader _cardReader = new CardReader();
+        private CardReader _cardReader;
 
         public UI(ControlSystem cs)
         {
@@ -23,7 +23,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             _tsw770.SigChange += _tsw770_SigChange;
             _tsw770.OnlineStatusChange += _tsw770_OnlineStatusChange;
             
-            var sgdFile = Path.Combine(Directory.GetApplicationDirectory(), "VPUB-TSW770.sgd");
+            var sgdFile = Path.Combine(Directory.GetApplicationDirectory(), "UI\\VPUB-TSW770.sgd");
             if (File.Exists(sgdFile))
             {
                 _tsw770.LoadSmartObjects(sgdFile);
@@ -36,6 +36,16 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             
             if (_tsw770.Register() != eDeviceRegistrationUnRegistrationResponse.Success)
                 ErrorLog.Error("Unable to register TSW770");
+            
+            _cardReader = new CardReader();
+            
+            // Card Reader Events Member Is Not Expired
+            _cardReader.MemberIsNotExpired += (sender, args) =>
+            {
+                UI_Actions.TogglePopup(_tsw770, (ushort)UI_Actions.PopupsJoinGroup["Message_Pop"]);
+                _tsw770.BooleanInput[(ushort)UI_Actions.VisibilityJoins.VPubLoginOK].BoolValue = true;
+            };
+
         }
         private void _tsw770_OnlineStatusChange(GenericBase currentdevice, OnlineOfflineEventArgs args)
         {
@@ -43,6 +53,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             
             if(!args.DeviceOnLine) return;
             
+            // Subpage Joins
             foreach (var popup in UI_Actions.PopupsJoinGroup)
             {
                 ((Tsw770)currentdevice).BooleanOutput[popup.Value].UserObject = new Action<bool>(b =>
@@ -51,42 +62,49 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 });
             }
             
-            _tsw770.StringInput[3].StringValue = $"Storefront { ControlSystem.SpaceId }";
-            _tsw770.StringInput[4].StringValue = $"{ ControlSystem.SpaceDecor }";
-            _tsw770.StringInput[5].StringValue = $"{ ControlSystem.OsVersion }";
-            _tsw770.StringInput[6].StringValue = $"{ ControlSystem.IpAddress }";
-            _tsw770.StringInput[7].StringValue = $"{ ControlSystem.MacAddress.ToUpper() }";
-            _tsw770.StringInput[8].StringValue = $"{ ControlSystem.NumOfStoresAvailable }";
-            _tsw770.StringInput[9].StringValue = $"{ ControlSystem.NumOfStoresOpen }";
-            _tsw770.StringInput[10].StringValue = $"{ ControlSystem.NumOfMarketItemsAvailable }";
+            // Serial Joins
+            _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.SpaceId].StringValue = $"Storefront { ControlSystem.SpaceId }";
+            _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.Decorator].StringValue = $"{ ControlSystem.SpaceDecor }";
+            _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.OsVersion].StringValue = $"{ ControlSystem.OsVersion }";
+            _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.IpAddress].StringValue = $"{ ControlSystem.IpAddress }";
+            _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MacAddress].StringValue = $"{ ControlSystem.MacAddress.ToUpper() }";
+            _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontAvailable].StringValue = $"{ ControlSystem.NumOfStoresAvailable }";
+            _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontTotal].StringValue = $"{ ControlSystem.NumOfStoresOpen }";
+            _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MarketItemAvailable].StringValue = $"{ ControlSystem.NumOfMarketItemsAvailable }";
 
+            // Smart Object Joins
             foreach (var smartObject1BooleanOutput in _tsw770.SmartObjects[1].BooleanOutput)
             {
                 smartObject1BooleanOutput.UserObject = new Action<bool>(b =>
                 {
-                    if (b)
-                    {
-                        CardReader.CardNumber = UI_Actions.KeypadInput(CardReader.CardNumber.ToString(), smartObject1BooleanOutput.Name);
-                        CrestronConsole.PrintLine(CardReader.CardNumber.ToString());
-                    }
+                    if (!b) return;
+                    CardReader.CardNumber = UI_Actions.KeypadInput(CardReader.CardNumber.ToString(), smartObject1BooleanOutput.Name);
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.KeypadInput].StringValue = CardReader.CardNumber.ToString();
+                    CrestronConsole.PrintLine(CardReader.CardNumber.ToString());
                 });
             }
             
-            _tsw770.BooleanOutput[10].UserObject = new Action<bool>(b =>
+            // Boolean Joins
+            _tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.VPubLoginEnter].UserObject = new Action<bool>(b =>
             {
-                if (b)
-                {
-                    var memberInfo = _cardReader.GetMemberInfo(CardReader.CardNumber);
-                    CrestronConsole.PrintLine($"Member Info: {memberInfo}");
-                }
+                if (!b) return;
+                var memberInfo = _cardReader.GetMemberInfo(CardReader.CardNumber);
+                UI_Actions.KeypadInput("", "Misc_1");
+                CrestronConsole.PrintLine($"Member Info: {memberInfo}");
+            });
+            
+            _tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.VPubLoginAck].UserObject = new Action<bool>(b =>
+            {
+                if (!b) return;
+                UI_Actions.TogglePopup(_tsw770, (ushort)UI_Actions.PopupsJoinGroup["ClosePopUps"]);
             });
         }
 
         private void UpdateTime(object userspecific)
         {
             _now = DateTime.Now;
-            _tsw770.StringInput[1].StringValue = _now.ToString("dddd, dd MMMM, yyyy");
-            _tsw770.StringInput[2].StringValue = _now.ToString("HH:mm:ss");
+            _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.Date].StringValue = _now.ToString("dddd, dd MMMM, yyyy");
+            _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.Time].StringValue = _now.ToString("HH:mm:ss");
         }
 
         private void _tsw770_SigChange(BasicTriList currentdevice, SigEventArgs args)

@@ -130,7 +130,6 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                         ControlSystem.SpaceDecor = store.SPACE_DECOR;
                                         ControlSystem.NumOfStoresAvailable = Stores.Count(s => s.IS_STOREFRONT);
                                         ControlSystem.NumOfStoresOpen = Stores.Count(s => s.OPEN);
-                                        ControlSystem.NumOfMarketItemsAvailable = Retail.Count(r => r.UPC != null);
                                     }
                                 }
                                 return;
@@ -147,9 +146,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                 {
                                     CrestronConsole.PrintLine($"Retail: {retail.UPC}");
                                 }
+                                ControlSystem.NumOfMarketItemsAvailable = Retail.Count(r => r.UPC != null);
                                 return;
                             }
-
+                            
                             CrestronConsole.PrintLine($"Error validating manifest: Retail");
                         }
                     }
