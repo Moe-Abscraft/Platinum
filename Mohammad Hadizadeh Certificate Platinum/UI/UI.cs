@@ -1,6 +1,7 @@
 ﻿using System;
 using System.CodeDom;
 using System.IO;
+using System.Linq;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro;
 using Crestron.SimplSharpPro.DeviceSupport;
@@ -42,8 +43,19 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             // Card Reader Events Member Is Not Expired
             _cardReader.MemberIsNotExpired += (sender, args) =>
             {
-                UI_Actions.TogglePopup(_tsw770, (ushort)UI_Actions.PopupsJoinGroup["Message_Pop"]);
+                UI_Actions.TogglePopup(_tsw770, UI_Actions.PopupsJoinGroup["Message_Pop"][0]);
                 _tsw770.BooleanInput[(ushort)UI_Actions.VisibilityJoins.VPubLoginOK].BoolValue = true;
+                UI_Actions.KeypadInput("", "Misc_1");
+
+                var memberInquiry = new MemberInquiryRequest().GetMemberInquiryRequest("192.168.1.15");
+                CrestronConsole.PrintLine($"Member Inquiry: {memberInquiry}");
+            };
+            
+            _cardReader.MemberIsExpired += (sender, args) =>
+            {
+                UI_Actions.TogglePopup(_tsw770, UI_Actions.PopupsJoinGroup["Message_Pop"][0]);
+                _tsw770.BooleanInput[(ushort)UI_Actions.VisibilityJoins.VPubLoginOK].BoolValue = true;
+                UI_Actions.KeypadInput("", "Misc_1");
             };
 
         }
@@ -52,16 +64,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             _timer = new CTimer(UpdateTime, null, 0, 1000);
             
             if(!args.DeviceOnLine) return;
-            
-            // Subpage Joins
-            foreach (var popup in UI_Actions.PopupsJoinGroup)
-            {
-                ((Tsw770)currentdevice).BooleanOutput[popup.Value].UserObject = new Action<bool>(b =>
-                {
-                    if(b) UI_Actions.TogglePopup((Tsw770)currentdevice, popup.Value);
-                });
-            }
-            
+
             // Serial Joins
             _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.SpaceId].StringValue = $"Storefront { ControlSystem.SpaceId }";
             _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.Decorator].StringValue = $"{ ControlSystem.SpaceDecor }";
@@ -79,7 +82,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 {
                     if (!b) return;
                     CardReader.CardNumber = UI_Actions.KeypadInput(CardReader.CardNumber.ToString(), smartObject1BooleanOutput.Name);
-                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.KeypadInput].StringValue = CardReader.CardNumber.ToString();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.KeypadInput].StringValue = CardReader.CardNumber > 0 ? CardReader.CardNumber.ToString() : "";
                     CrestronConsole.PrintLine(CardReader.CardNumber.ToString());
                 });
             }
@@ -91,13 +94,27 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 var memberInfo = _cardReader.GetMemberInfo(CardReader.CardNumber);
                 UI_Actions.KeypadInput("", "Misc_1");
                 CrestronConsole.PrintLine($"Member Info: {memberInfo}");
+                
+                _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberAccessMessage].StringValue = CardReader.MembershipIsValie ? "Access Granted" : "Access Denied";
+                _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberName].StringValue = CardReader.MemberName;
+                _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberPubId].StringValue = CardReader.MemberId;
+                _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberExpireDate].StringValue = CardReader.MemberExpiryDateTime.ToString("dd MMMM yyyy");
             });
             
             _tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.VPubLoginAck].UserObject = new Action<bool>(b =>
             {
-                if (!b) return;
-                UI_Actions.TogglePopup(_tsw770, (ushort)UI_Actions.PopupsJoinGroup["ClosePopUps"]);
+                if(CardReader.MembershipIsValie)
+                    _tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.OperatingPage].BoolValue = true;
             });
+            
+            // Subpage Joins
+            foreach (var popup in UI_Actions.PopupsJoinGroup.Values.SelectMany(joins => joins.Where(j => j > 0)))
+            {
+                ((Tsw770)currentdevice).BooleanOutput[popup].UserObject = new Action<bool>(b =>
+                {
+                    if(b) UI_Actions.TogglePopup((Tsw770)currentdevice, popup);
+                });
+            }
         }
 
         private void UpdateTime(object userspecific)

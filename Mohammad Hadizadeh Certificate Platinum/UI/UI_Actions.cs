@@ -8,11 +8,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 {
     public class UI_Actions
     {
-        public static readonly Dictionary<string, uint> PopupsJoinGroup = new Dictionary<string, uint>()
+        public static readonly Dictionary<string, ushort[]> PopupsJoinGroup = new Dictionary<string, ushort[]>()
         {
-            {"ClosePopUps", 25},
-            {"Message_Pop", 11},
-            {"Message_KP", 12}
+            {"ClosePopUps", new ushort[] {25, 21}},
+            {"Message_Pop", new ushort[] {11}},
+            {"Message_KP", new ushort[] {12}}
         };
 
         public enum DigitalJoins
@@ -39,9 +39,13 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             StorefrontTotal = 9,
             MarketItemAvailable = 10,
             KeypadInput = 11,
+            MemberAccessMessage = 12,
+            MemberPubId = 13,
+            MemberName = 14,
+            MemberExpireDate = 15,
         }
 
-        public enum SubpageJoin
+        public enum SubpageJoins
         {
             VpubLogin = 12,
             VPubLoginKeypad = 12,
@@ -49,21 +53,21 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             OperatingPage = 13,
         }
         
-        public static void TogglePopup(BasicTriListWithSmartObject tp, uint join)
+        public static void TogglePopup(BasicTriListWithSmartObject tp, ushort join)
         {
-            if(join == PopupsJoinGroup["ClosePopUps"])
-            {            
-                foreach (var popup in PopupsJoinGroup.Where(popup => popup.Value != @join))
+            if(PopupsJoinGroup["ClosePopUps"].Contains<ushort>(join))
+            {
+                foreach (var pop in PopupsJoinGroup.SelectMany(popup => popup.Value.Where(p => p != join)))
                 {
-                    tp.BooleanInput[popup.Value].BoolValue = false;
+                    tp.BooleanInput[pop].BoolValue = false;
                 }
             }
             
             else
             {
-                foreach (var popup in PopupsJoinGroup.Where(popup => popup.Value != @join))
+                foreach (var pop in PopupsJoinGroup.SelectMany(popup => popup.Value.Where(p => p != join)))
                 {
-                    tp.BooleanInput[popup.Value].BoolValue = false;
+                    tp.BooleanInput[pop].BoolValue = false;
                 }
 
                 tp.BooleanInput[join].BoolValue = !tp.BooleanInput[join].BoolValue;

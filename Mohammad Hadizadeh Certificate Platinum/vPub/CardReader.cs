@@ -13,11 +13,19 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         public static string MemberId = "";
         public static string MemberName = "";
         public static string MemberExpiryDate = "";
+        public static DateTime MemberExpiryDateTime;
+        public static bool MembershipIsValie = false;
         
         public event EventHandler MemberIsNotExpired = delegate { };
         protected virtual void OnMemberIsNotExpired(EventArgs e)
         {
             MemberIsNotExpired(this, e);
+        }
+        
+        public event EventHandler MemberIsExpired = delegate { };
+        protected virtual void OnMemberIsExpired(EventArgs e)
+        {
+            MemberIsExpired(this, e);
         }
 
         public string GetMemberInfo(ushort cardNumber)
@@ -33,9 +41,12 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             if (IsMemberExpired(MemberExpiryDate))
             {
                 CrestronConsole.PrintLine("Member {0} is expired.", MemberName);
+                MembershipIsValie = false;
+                OnMemberIsExpired(EventArgs.Empty);
             }
             else
             {
+                MembershipIsValie = true;
                 OnMemberIsNotExpired(EventArgs.Empty);
             }
 
@@ -62,6 +73,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             var memberExpiryDateDay = int.Parse(memberExpiryDate.Substring(6, 2));
             var memberExpiryDateDateTime =
                 new DateTime(memberExpiryDateYear, memberExpiryDateMonth, memberExpiryDateDay);
+            MemberExpiryDateTime = memberExpiryDateDateTime;
             var today = DateTime.Today;
             return today > memberExpiryDateDateTime;
         }

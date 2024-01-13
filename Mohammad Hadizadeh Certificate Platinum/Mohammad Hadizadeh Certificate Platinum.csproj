@@ -141,6 +141,7 @@
         <Compile Include="UI\UI.cs" />
         <Compile Include="UI\UI_Actions.cs" />
         <Compile Include="vPub\CardReader.cs" />
+        <Compile Include="vPub\Inquiry_Server.cs" />
         <Compile Include="vPub\TransportTcpIp.cs" />
         <Compile Include="vPub\TransportTcpIpServer.cs" />
     </ItemGroup>
