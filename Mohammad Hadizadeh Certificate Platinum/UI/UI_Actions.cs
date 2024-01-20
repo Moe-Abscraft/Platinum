@@ -19,11 +19,12 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             VPubLoginEnter = 20,
             VPubLoginAck = 21,
+            VPubLogout = 10,
         }
         
         public enum VisibilityJoins
         {
-            VPubLoginOK = 7,
+            VPubLoginOk = 7,
         }
         
         public enum SerialJoins
@@ -47,10 +48,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         public enum SubpageJoins
         {
-            VpubLogin = 12,
             VPubLoginKeypad = 12,
             VPubLoginMessage = 11,
             OperatingPage = 13,
+            MessagePage = 14,
         }
         
         public static void TogglePopup(BasicTriListWithSmartObject tp, ushort join)

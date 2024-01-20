@@ -8,13 +8,15 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 {
     public class CardReader
     {
-        private vPubID _vPubID = new vPubID();
+        private readonly vPubID _vPubId = new vPubID();
         public static ushort CardNumber = 0;
         public static string MemberId = "";
         public static string MemberName = "";
-        public static string MemberExpiryDate = "";
+        private static string _memberExpiryDate = "";
         public static DateTime MemberExpiryDateTime;
-        public static bool MembershipIsValie = false;
+        public static bool MembershipIsValid = false;
+        private bool _membershipDateIsValid = false;
+        private bool _memberAlreadyLoggedIn = false;
         
         public event EventHandler MemberIsNotExpired = delegate { };
         protected virtual void OnMemberIsNotExpired(EventArgs e)
@@ -31,22 +33,37 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         public string GetMemberInfo(ushort cardNumber)
         {
             var memberInfo = "";
-            var member = _vPubID.QueryID(cardNumber);
+            var member = _vPubId.QueryID(cardNumber);
             if (member != null)
             {
                 memberInfo = member;
             }
 
             MemberInfoParser(memberInfo);
-            if (IsMemberExpired(MemberExpiryDate))
+
+            foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
+            {
+                CrestronConsole.PrintLine($"Checking the member login at: {storesIpAddress}");
+                var memberInquiry = new MemberInquiryRequest().GetMemberInquiryRequest(storesIpAddress.ToString());
+                CrestronConsole.PrintLine($"Member Inquiry: {memberInquiry}");
+                
+                _memberAlreadyLoggedIn = MemberId == memberInquiry;
+                if(_memberAlreadyLoggedIn) break;
+            }
+
+            if (IsMemberExpired(_memberExpiryDate))
             {
                 CrestronConsole.PrintLine("Member {0} is expired.", MemberName);
-                MembershipIsValie = false;
+                _membershipDateIsValid = false;
+                
+                MembershipIsValid = _membershipDateIsValid && !_memberAlreadyLoggedIn;
                 OnMemberIsExpired(EventArgs.Empty);
             }
             else
             {
-                MembershipIsValie = true;
+                _membershipDateIsValid = true;
+                
+                MembershipIsValid = _membershipDateIsValid && !_memberAlreadyLoggedIn;
                 OnMemberIsNotExpired(EventArgs.Empty);
             }
 
@@ -63,7 +80,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             var memberExpiryDate = memberInfoArray[2];
             MemberId = memberId;
             MemberName = memberName;
-            MemberExpiryDate = memberExpiryDate;
+            _memberExpiryDate = memberExpiryDate;
         }
 
         private bool IsMemberExpired(string memberExpiryDate)
