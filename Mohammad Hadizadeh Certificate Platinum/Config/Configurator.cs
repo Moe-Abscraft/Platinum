@@ -121,15 +121,71 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                             if (ValidateManifestStore(_manifestResponse.ContentString))
                             {
                                 Stores = JArray.Parse(_manifestResponse.ContentString).ToObject<Stores[]>();
+
+                                ControlSystem.StoreFronts = new StoreFronts.StoreFronts(Stores.Length);
+                                var i = 0;
+                                var j = 0;
                                 foreach (var store in Stores)
                                 {
                                     CrestronConsole.PrintLine($"Store: {store.SPACE_ID}");
                                     if (MacAddressNormalize(store.MACADDR) == MacAddressNormalize(ControlSystem.MacAddress))
                                     {
+                                        ControlSystem.MyStore = store;
                                         ControlSystem.SpaceId = store.SPACE_ID;
                                         ControlSystem.SpaceDecor = store.SPACE_DECOR;
                                         ControlSystem.NumOfStoresAvailable = Stores.Count(s => s.IS_STOREFRONT);
                                         ControlSystem.NumOfStoresOpen = Stores.Count(s => s.OPEN);
+                                    }
+
+                                    if (store.IS_STOREFRONT)
+                                    {
+                                        ControlSystem.StoreFronts[store.SPACE_ID] = new StoreFronts.StoreFront() {SpaceId = store.SPACE_ID};
+                                        i++;
+                                        switch (store.SPACE_ID)
+                                        {
+                                            case "A":
+                                                store.Fans = new ushort[] { 1, 3 };
+                                                break;
+                                            case "B":
+                                                store.Fans = new ushort[] { 4 };
+                                                break;
+                                            case "C":
+                                                store.Fans = new ushort[] { 6, 8 };
+                                                break;
+                                            case "D":
+                                                store.Fans = new ushort[] { 9 };
+                                                break;
+                                            case "E":
+                                                store.Fans = new ushort[] { 11, 13 };
+                                                break;
+                                            case "F":
+                                                store.Fans = new ushort[] { 14, 16 };
+                                                break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        switch (store.SPACE_ID)
+                                        {
+                                            case "1":
+                                                store.Fans = new ushort[] { 2 };
+                                                break;
+                                            case "2":
+                                                store.Fans = new ushort[] { 5 };
+                                                break;
+                                            case "3":
+                                                store.Fans = new ushort[] { 7 };
+                                                break;
+                                            case "4":
+                                                store.Fans = new ushort[] { 10 };
+                                                break;
+                                            case "5":
+                                                store.Fans = new ushort[] { 12 };
+                                                break;
+                                            case "6":
+                                                store.Fans = new ushort[] { 15 };
+                                                break;
+                                        }
                                     }
                                 }
                                 return;

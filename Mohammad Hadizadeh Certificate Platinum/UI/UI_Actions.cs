@@ -12,7 +12,9 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             {"ClosePopUps", new ushort[] {25, 21}},
             {"Message_Pop", new ushort[] {11}},
-            {"Message_KP", new ushort[] {12}}
+            {"Message_KP", new ushort[] {12}},
+            {"Operation_Storefronts", new ushort[]{15}},
+            {"Operation_Retail", new ushort[]{16}}
         };
 
         public enum DigitalJoins
@@ -44,6 +46,25 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             MemberPubId = 13,
             MemberName = 14,
             MemberExpireDate = 15,
+            TimerHours = 16,
+            TimerMinutes = 17,
+            TimerSeconds = 18,
+        }
+
+        public enum AnalogJoins
+        {
+            StoreFrontMode1 = 1,
+            StoreFrontMode2 = 2,
+            StoreFrontMode3 = 3,
+            StoreFrontMode4 = 4,
+            StoreFrontMode5 = 5,
+            StoreFrontMode6 = 6,
+            WorkSpaceMode1 = 7,
+            WorkSpaceMode2 = 8,
+            WorkSpaceMode3 = 9,
+            WorkSpaceMode4 = 10,
+            WorkSpaceMode5 = 11,
+            WorkSpaceMode6 = 12,
         }
 
         public enum SubpageJoins
@@ -52,6 +73,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             VPubLoginMessage = 11,
             OperatingPage = 13,
             MessagePage = 14,
+            StorefrontsPage = 15,
+            RetailPage = 16,
         }
         
         public static void TogglePopup(BasicTriListWithSmartObject tp, ushort join)

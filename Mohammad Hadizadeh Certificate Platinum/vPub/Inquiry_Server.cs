@@ -3,6 +3,7 @@ using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.WebScripting;
+using Mohammad_Hadizadeh_Certificate_Platinum.StoreFronts;
 using Newtonsoft.Json;
 
 namespace Mohammad_Hadizadeh_Certificate_Platinum
@@ -10,19 +11,25 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
     public class Inquiry_Server
     {
         private readonly HttpCwsServer _server;
-        
         public Inquiry_Server()
         {
             _server = new HttpCwsServer("/api");
             _server.ReceivedRequestEvent += _server_ReceivedRequestEvent;
             _server.HttpRequestHandler = new DefaultHttpCwsRequestHandler();
             
-            HttpCwsRoute route = new HttpCwsRoute("inquiry")
+            HttpCwsRoute route_1 = new HttpCwsRoute("member_inquiry")
             {
                 Name = "member_inquiry",
                 RouteHandler = new MemberInquiryHandler()
             };
-            _server.Routes.Add(route);
+            _server.Routes.Add(route_1);
+            
+            HttpCwsRoute route_2 = new HttpCwsRoute("store_status")
+            {
+                Name = "store_status",
+                RouteHandler = new StoreStatusHandler()
+            };
+            _server.Routes.Add(route_2);
             
             _server.Register();
         }
@@ -65,6 +72,53 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             }
         }
     }
+    
+    public class StoreStatusHandler : IHttpCwsHandler
+    {
+        public static event EventHandler<Space> SpaceStatusChangedEvent = delegate {  };
+        protected virtual void OnSpaceStatusChangedEvent(Space e)
+        {
+            SpaceStatusChangedEvent?.Invoke(this, e);
+        }
+        public void ProcessRequest(HttpCwsContext context)
+        {
+            if(context.Request.HttpMethod == "POST")
+            {
+                using (var sr = new StreamReader(context.Request.InputStream))
+                {
+                    try
+                    {
+                        var data = sr.ReadToEnd();
+                        CrestronConsole.PrintLine(data);
+                        var storeStatus = JsonConvert.DeserializeObject<StoreFront>(data);
+                        OnSpaceStatusChangedEvent(storeStatus);
+                        // ControlSystem.StoreFronts[storeStatus.SpaceId] = storeStatus;
+                    }
+                    catch (Exception e)
+                    {
+                        CrestronConsole.PrintLine(e.Message);
+                    }
+                }
+                
+                if(context.Request.RouteData.Route.Name == "store_status")
+                {
+                    try
+                    {
+                        context.Response.StatusCode = 200;
+                        context.Response.StatusDescription = "OK";
+                        context.Response.AppendHeader("Content-Type", "application/json");
+                        context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+                        context.Response.Write("OK" , true);
+                        context.Response.End();
+                    }
+                    catch (Exception e)
+                    {
+                        CrestronConsole.PrintLine(e.Message);
+                    }
+                }
+            }
+        }
+    }
 
     public class DefaultHttpCwsRequestHandler : IHttpCwsHandler
     {
@@ -74,12 +128,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         }
     }
     
-    public class MemberInquiryRequest
+    public class InquiryRequest
     {
         private HttpClient _client;
         HttpClientRequest _request = new HttpClientRequest()
         {
-            RequestType = RequestType.Get,
             KeepAlive = false
         };
         
@@ -90,8 +143,9 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 InquiryResponseModel responseModel;
                 using (_client = new HttpClient())
                 {
-                    _request.Url = new UrlParser("http://" + host + "/cws/api/inquiry");
+                    _request.Url = new UrlParser("http://" + host + "/cws/api/member_inquiry");
                     _request.Header.ContentType = "application/json";
+                    _request.RequestType = RequestType.Get;
                 
                     using (var response = _client.Dispatch(_request))
                     {
@@ -106,6 +160,30 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             {
                 CrestronConsole.PrintLine(e.Message);
                 return "";
+            }
+        }
+
+        public void UpdateStoreStatusRequest(string host, StoreFront storeFront)
+        {
+            try
+            {
+                using (_client = new HttpClient())
+                {
+                    _request.Url = new UrlParser("http://" + host + "/cws/api/store_status");
+                    _request.Header.ContentType = "application/json";
+                    _request.RequestType = RequestType.Post;
+                    
+                    _request.ContentString = JsonConvert.SerializeObject(storeFront);
+                
+                    using (var response = _client.Dispatch(_request))
+                    {
+                        CrestronConsole.PrintLine(response.ContentString);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                CrestronConsole.PrintLine(e.Message);
             }
         }
     }

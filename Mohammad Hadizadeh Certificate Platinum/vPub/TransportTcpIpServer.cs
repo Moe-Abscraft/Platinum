@@ -8,7 +8,6 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
     public class TransportTcpIpServer
     {
         private TCPServer _server;
-        
         public event EventHandler<MessageEventArgs> ConnectionError = delegate { };
         protected virtual void OnConnectionError(MessageEventArgs e)
         {
