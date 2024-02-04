@@ -74,7 +74,9 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         private void StoreStatusHandlerOnSpaceStatusChangedEvent(object sender, Space args)
         {
             CrestronConsole.PrintLine($"Received Status Change Event for Space {args.SpaceId} with Mode {args.SpaceMode}");
-                
+            CrestronConsole.PrintLine($"Member ID: {args.MemberId} Member Name: {args.MemberName} My Member ID: {CardReader.MemberId}");
+
+            ControlSystem.StoreFronts[args.SpaceId] = null;
             ControlSystem.StoreFronts[args.SpaceId] = new StoreFront()
             {
                 SpaceId = args.SpaceId, 
@@ -82,26 +84,46 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 MemberId = args.MemberId, 
                 MemberName = args.MemberName
             };
+            
+            CrestronConsole.PrintLine($"Space Mode: {ControlSystem.StoreFronts[args.SpaceId].SpaceMode}");
 
             switch (args.SpaceId)
             {
                 case "A":
                     _tsw770.UShortInput[(ushort)UI_Actions.AnalogJoins.StoreFrontMode1].UShortValue = ControlSystem.StoreFronts[args.SpaceId].GetModeColor();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontStatusA].StringValue = 
+                        ControlSystem.StoreFronts[args.SpaceId].SpaceMode == SpaceMode.MySpace ? "Your Space" : ControlSystem.StoreFronts[args.SpaceId].SpaceMode.ToString();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontMemberA].StringValue =  ControlSystem.StoreFronts[args.SpaceId].MemberName;
                     break;
                 case "B":
                     _tsw770.UShortInput[(ushort)UI_Actions.AnalogJoins.StoreFrontMode2].UShortValue = ControlSystem.StoreFronts[args.SpaceId].GetModeColor();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontStatusB].StringValue = 
+                        ControlSystem.StoreFronts[args.SpaceId].SpaceMode == SpaceMode.MySpace ? "Your Space" : ControlSystem.StoreFronts[args.SpaceId].SpaceMode.ToString();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontMemberB].StringValue =  ControlSystem.StoreFronts[args.SpaceId].MemberName;
                     break;
                 case "C":
                     _tsw770.UShortInput[(ushort)UI_Actions.AnalogJoins.StoreFrontMode3].UShortValue = ControlSystem.StoreFronts[args.SpaceId].GetModeColor();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontStatusC].StringValue = 
+                        ControlSystem.StoreFronts[args.SpaceId].SpaceMode == SpaceMode.MySpace ? "Your Space" : ControlSystem.StoreFronts[args.SpaceId].SpaceMode.ToString();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontMemberC].StringValue =  ControlSystem.StoreFronts[args.SpaceId].MemberName;
                     break;
                 case "D":
                     _tsw770.UShortInput[(ushort)UI_Actions.AnalogJoins.StoreFrontMode4].UShortValue = ControlSystem.StoreFronts[args.SpaceId].GetModeColor();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontStatusD].StringValue = 
+                        ControlSystem.StoreFronts[args.SpaceId].SpaceMode == SpaceMode.MySpace ? "Your Space" : ControlSystem.StoreFronts[args.SpaceId].SpaceMode.ToString();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontMemberD].StringValue =  ControlSystem.StoreFronts[args.SpaceId].MemberName;
                     break;
                 case "E":
                     _tsw770.UShortInput[(ushort)UI_Actions.AnalogJoins.StoreFrontMode5].UShortValue = ControlSystem.StoreFronts[args.SpaceId].GetModeColor();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontStatusE].StringValue = 
+                        ControlSystem.StoreFronts[args.SpaceId].SpaceMode == SpaceMode.MySpace ? "Your Space" : ControlSystem.StoreFronts[args.SpaceId].SpaceMode.ToString();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontMemberE].StringValue =  ControlSystem.StoreFronts[args.SpaceId].MemberName;
                     break;
                 case "F":
                     _tsw770.UShortInput[(ushort)UI_Actions.AnalogJoins.StoreFrontMode6].UShortValue = ControlSystem.StoreFronts[args.SpaceId].GetModeColor();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontStatusF].StringValue = 
+                        ControlSystem.StoreFronts[args.SpaceId].SpaceMode == SpaceMode.MySpace ? "Your Space" : ControlSystem.StoreFronts[args.SpaceId].SpaceMode.ToString();
+                    _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontMemberF].StringValue =  ControlSystem.StoreFronts[args.SpaceId].MemberName;
                     break;
             }
         }
@@ -176,7 +198,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     
                     var storeStatusUpdate = new InquiryRequest();
 
-                    ControlSystem.StoreFronts[ControlSystem.SpaceId].SpaceMode = SpaceMode.MySpace;
+                    ControlSystem.StoreFronts[ControlSystem.SpaceId].SpaceMode = SpaceMode.Occupied;
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberId = CardReader.MemberId;
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberName = CardReader.MemberName;
                     storeStatusUpdate.UpdateStoreStatusRequest(ControlSystem.IpAddress, ControlSystem.StoreFronts[ControlSystem.SpaceId]);
@@ -192,6 +214,17 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             {
                 _tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.OperatingPage].BoolValue = false;
                 _tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.MessagePage].BoolValue = true;
+                
+                var storeStatusUpdate = new InquiryRequest();
+
+                ControlSystem.StoreFronts[ControlSystem.SpaceId].SpaceMode = SpaceMode.Available;
+                ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberId = "";
+                ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberName = "";
+                storeStatusUpdate.UpdateStoreStatusRequest(ControlSystem.IpAddress, ControlSystem.StoreFronts[ControlSystem.SpaceId]);
+                foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
+                {
+                    storeStatusUpdate.UpdateStoreStatusRequest(storesIpAddress.ToString(), ControlSystem.StoreFronts[ControlSystem.SpaceId]);
+                }
                 
                 _loginTimer.Stop();
                 _loginTimer.Reset();
@@ -227,6 +260,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             _now = DateTime.Now;
             _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.Date].StringValue = _now.ToString("dddd, dd MMMM, yyyy");
             _tsw770.StringInput[(ushort)UI_Actions.SerialJoins.Time].StringValue = _now.ToString("HH:mm:ss");
+        }
+        
+        private void UpdateStoreFrontInfo(StoreFront storeFront)
+        {
+
         }
 
         private void _tsw770_SigChange(BasicTriList currentdevice, SigEventArgs args)

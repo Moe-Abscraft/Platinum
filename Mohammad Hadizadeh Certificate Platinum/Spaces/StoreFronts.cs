@@ -30,11 +30,15 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum.StoreFronts
             {
                 for (var i = 0; i < _storeFronts.Length; i++)
                 {
-                    if (_storeFronts[i] == null)
+                    if(_storeFronts[i] != null)
                     {
+                        if (_storeFronts[i].SpaceId != storeId) continue;
                         _storeFronts[i] = value;
                         break;
                     }
+
+                    _storeFronts[i] = value;
+                    break;
                 }
             }
         }

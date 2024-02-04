@@ -26,7 +26,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         private HttpClient _manifestClient;
         private HttpClientResponse _manifestResponse;
 
-        public Stores[] Stores = new Stores[] { };
+        public Store[] Stores = new Store[] { };
         public Retail[] Retail = new Retail[] { };
 
         public Configurator()
@@ -120,9 +120,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         {
                             if (ValidateManifestStore(_manifestResponse.ContentString))
                             {
-                                Stores = JArray.Parse(_manifestResponse.ContentString).ToObject<Stores[]>();
+                                Stores = JArray.Parse(_manifestResponse.ContentString).ToObject<Store[]>();
 
                                 ControlSystem.StoreFronts = new StoreFronts.StoreFronts(Stores.Length);
+
                                 var i = 0;
                                 var j = 0;
                                 foreach (var store in Stores)

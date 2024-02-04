@@ -49,6 +49,18 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             TimerHours = 16,
             TimerMinutes = 17,
             TimerSeconds = 18,
+            StorefrontStatusA = 21,
+            StorefrontStatusB = 22,
+            StorefrontStatusC = 23,
+            StorefrontStatusD = 24,
+            StorefrontStatusE = 25,
+            StorefrontStatusF = 26,
+            StorefrontMemberA = 27,
+            StorefrontMemberB = 28,
+            StorefrontMemberC = 29,
+            StorefrontMemberD = 30,
+            StorefrontMemberE = 31,
+            StorefrontMemberF = 32,
         }
 
         public enum AnalogJoins
@@ -75,6 +87,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             MessagePage = 14,
             StorefrontsPage = 15,
             RetailPage = 16,
+
         }
         
         public static void TogglePopup(BasicTriListWithSmartObject tp, ushort join)

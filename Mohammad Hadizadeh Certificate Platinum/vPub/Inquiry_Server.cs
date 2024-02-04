@@ -92,7 +92,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         CrestronConsole.PrintLine(data);
                         var storeStatus = JsonConvert.DeserializeObject<StoreFront>(data);
                         OnSpaceStatusChangedEvent(storeStatus);
-                        // ControlSystem.StoreFronts[storeStatus.SpaceId] = storeStatus;
+                        //ControlSystem.StoreFronts[storeStatus.SpaceId] = storeStatus;
                     }
                     catch (Exception e)
                     {

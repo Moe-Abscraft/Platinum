@@ -1,6 +1,6 @@
 ﻿namespace Mohammad_Hadizadeh_Certificate_Platinum
 {
-    public class Stores
+    public class Store
     {
         public string SPACE_ID { get; set; }
         public string SPACE_DECOR { get; set; }
