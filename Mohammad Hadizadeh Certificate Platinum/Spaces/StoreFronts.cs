@@ -54,11 +54,28 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum.StoreFronts
                 case SpaceMode.MySpace:
                     return 4;
                 case SpaceMode.Available:
-                    return 1;
+                    return 0;
                 case SpaceMode.Occupied:
-                    return 4;
+                    switch (SpaceId)
+                    {
+                        case "A":
+                            return 2;
+                        case "B":
+                            return 3;
+                        case "C":
+                            return 5;
+                        case "D":
+                            return 6;
+                        case "E":
+                            return 7;
+                        case "F":
+                            return 8;
+                        default:
+                            return 0;
+                    }
+
                 case SpaceMode.Closed:
-                    return 4;
+                    return 1;
                 default:
                     return 0;
             }

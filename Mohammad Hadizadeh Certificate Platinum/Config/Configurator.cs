@@ -5,6 +5,7 @@ using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharpPro;
 using Crestron.SimplSharpPro.Media;
+using Mohammad_Hadizadeh_Certificate_Platinum.StoreFronts;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
 
@@ -140,7 +141,14 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                                     if (store.IS_STOREFRONT)
                                     {
-                                        ControlSystem.StoreFronts[store.SPACE_ID] = new StoreFronts.StoreFront() {SpaceId = store.SPACE_ID};
+                                        ControlSystem.StoreFronts[store.SPACE_ID] = new StoreFronts.StoreFront()
+                                        {
+                                            SpaceId = store.SPACE_ID, 
+                                            SpaceMode = SpaceMode.Closed,
+                                            MemberName = "",
+                                            MemberId = "",
+                                        };
+                                        
                                         i++;
                                         switch (store.SPACE_ID)
                                         {

@@ -84,22 +84,41 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             if(context.Request.HttpMethod == "POST")
             {
-                using (var sr = new StreamReader(context.Request.InputStream))
+                if(context.Request.RouteData.Route.Name == "store_status")
                 {
+                    using (var sr = new StreamReader(context.Request.InputStream))
+                    {
+                        try
+                        {
+                            var data = sr.ReadToEnd();
+                            CrestronConsole.PrintLine(data);
+                            var storeStatus = JsonConvert.DeserializeObject<StoreFront>(data);
+                            OnSpaceStatusChangedEvent(storeStatus);
+                            //ControlSystem.StoreFronts[storeStatus.SpaceId] = storeStatus;
+                        }
+                        catch (Exception e)
+                        {
+                            CrestronConsole.PrintLine(e.Message);
+                        }
+                    }
+                    
                     try
                     {
-                        var data = sr.ReadToEnd();
-                        CrestronConsole.PrintLine(data);
-                        var storeStatus = JsonConvert.DeserializeObject<StoreFront>(data);
-                        OnSpaceStatusChangedEvent(storeStatus);
-                        //ControlSystem.StoreFronts[storeStatus.SpaceId] = storeStatus;
+                        context.Response.StatusCode = 200;
+                        context.Response.StatusDescription = "OK";
+                        context.Response.AppendHeader("Content-Type", "application/json");
+                        context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+                        context.Response.Write("OK" , true);
+                        context.Response.End();
                     }
                     catch (Exception e)
                     {
                         CrestronConsole.PrintLine(e.Message);
                     }
                 }
-                
+            }
+            else if(context.Request.HttpMethod == "GET")
+            {
                 if(context.Request.RouteData.Route.Name == "store_status")
                 {
                     try
@@ -108,7 +127,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         context.Response.StatusDescription = "OK";
                         context.Response.AppendHeader("Content-Type", "application/json");
                         context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
-                        context.Response.Write("OK" , true);
+                        context.Response.Write(JsonConvert.SerializeObject(ControlSystem.StoreFronts[ControlSystem.SpaceId]) , true);
                         context.Response.End();
                     }
                     catch (Exception e)
@@ -184,6 +203,31 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             catch (Exception e)
             {
                 CrestronConsole.PrintLine(e.Message);
+            }
+        }
+        
+        public StoreFront GetStoreStatusRequest(string host, StoreFront storeFront)
+        {
+            try
+            {
+                using (_client = new HttpClient())
+                {
+                    _request.Url = new UrlParser("http://" + host + "/cws/api/store_status");
+                    _request.Header.ContentType = "application/json";
+                    _request.RequestType = RequestType.Get;
+                    _request.ContentString = storeFront.SpaceId;
+
+                    using (var response = _client.Dispatch(_request))
+                    {
+                        var status = JsonConvert.DeserializeObject<StoreFront>(response.ContentString);
+                        return status;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                CrestronConsole.PrintLine(e.Message);
+                return null;
             }
         }
     }
