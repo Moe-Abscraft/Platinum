@@ -5,7 +5,6 @@ using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharpPro;
 using Crestron.SimplSharpPro.Media;
-using Mohammad_Hadizadeh_Certificate_Platinum.StoreFronts;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
 
@@ -27,7 +26,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         private HttpClient _manifestClient;
         private HttpClientResponse _manifestResponse;
 
-        public Store[] Stores = new Store[] { };
+        public static Store[] Stores = new Store[] { };
         public Retail[] Retail = new Retail[] { };
 
         public Configurator()
@@ -123,7 +122,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                             {
                                 Stores = JArray.Parse(_manifestResponse.ContentString).ToObject<Store[]>();
 
-                                ControlSystem.StoreFronts = new StoreFronts.StoreFronts(Stores.Length);
+                                ControlSystem.StoreFronts = new StoreFronts(Stores.Count(s => s.IS_STOREFRONT));
+                                ControlSystem.WorkSpaces = new WorkSpaces(Stores.Count(s => !s.IS_STOREFRONT));
 
                                 var i = 0;
                                 var j = 0;
@@ -141,7 +141,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                                     if (store.IS_STOREFRONT)
                                     {
-                                        ControlSystem.StoreFronts[store.SPACE_ID] = new StoreFronts.StoreFront()
+                                        ControlSystem.StoreFronts[store.SPACE_ID] = new StoreFront()
                                         {
                                             SpaceId = store.SPACE_ID, 
                                             SpaceMode = SpaceMode.Closed,
@@ -174,6 +174,14 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                     }
                                     else
                                     {
+                                        ControlSystem.WorkSpaces[store.SPACE_ID] = new WorkSpace()
+                                        {
+                                            SpaceId = store.SPACE_ID, 
+                                            SpaceMode = SpaceMode.Closed,
+                                            MemberName = "",
+                                            MemberId = "",
+                                        };
+                                        
                                         switch (store.SPACE_ID)
                                         {
                                             case "1":
@@ -207,10 +215,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                             if (ValidateManifestRetail(_manifestResponse.ContentString))
                             {
                                 Retail = JArray.Parse(_manifestResponse.ContentString).ToObject<Retail[]>();
-                                foreach (var retail in Retail)
-                                {
-                                    CrestronConsole.PrintLine($"Retail: {retail.UPC}");
-                                }
+                                // foreach (var retail in Retail)
+                                // {
+                                //     CrestronConsole.PrintLine($"Retail: {retail.UPC}");
+                                // }
                                 ControlSystem.NumOfMarketItemsAvailable = Retail.Count(r => r.UPC != null);
                                 return;
                             }

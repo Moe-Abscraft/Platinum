@@ -1,7 +1,6 @@
-﻿using System;
-using Crestron.SimplSharp;
+﻿using Crestron.SimplSharp;
 
-namespace Mohammad_Hadizadeh_Certificate_Platinum.StoreFronts
+namespace Mohammad_Hadizadeh_Certificate_Platinum
 {
     public class StoreFronts
     {
@@ -48,7 +47,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum.StoreFronts
     {
         public override ushort GetModeColor()
         {
-            CrestronConsole.PrintLine($"Getting color for {SpaceMode}");
+            CrestronConsole.PrintLine($"Getting storefront color for {SpaceMode}");
             switch (SpaceMode)
             {
                 case SpaceMode.MySpace:
@@ -56,26 +55,48 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum.StoreFronts
                 case SpaceMode.Available:
                     return 0;
                 case SpaceMode.Occupied:
-                    switch (SpaceId)
-                    {
-                        case "A":
-                            return 2;
-                        case "B":
-                            return 3;
-                        case "C":
-                            return 5;
-                        case "D":
-                            return 6;
-                        case "E":
-                            return 7;
-                        case "F":
-                            return 8;
-                        default:
-                            return 0;
-                    }
+                    return GetOccupiedColor(SpaceId);
+                    // switch (SpaceId)
+                    // {
+                    //     case "A":
+                    //         return 2;
+                    //     case "B":
+                    //         return 3;
+                    //     case "C":
+                    //         return 5;
+                    //     case "D":
+                    //         return 6;
+                    //     case "E":
+                    //         return 7;
+                    //     case "F":
+                    //         return 8;
+                    //     default:
+                    //         return 0;
+                    // }
 
                 case SpaceMode.Closed:
                     return 1;
+                default:
+                    return 0;
+            }
+        }
+        
+        public static ushort GetOccupiedColor(string spaceId)
+        {
+            switch (spaceId)
+            {
+                case "A":
+                    return 2;
+                case "B":
+                    return 3;
+                case "C":
+                    return 5;
+                case "D":
+                    return 6;
+                case "E":
+                    return 7;
+                case "F":
+                    return 8;
                 default:
                     return 0;
             }

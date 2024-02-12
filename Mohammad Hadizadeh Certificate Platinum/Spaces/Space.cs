@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 
-namespace Mohammad_Hadizadeh_Certificate_Platinum.StoreFronts
+namespace Mohammad_Hadizadeh_Certificate_Platinum
 {
     public abstract class Space : EventArgs
     {

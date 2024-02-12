@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.WebScripting;
-using Mohammad_Hadizadeh_Certificate_Platinum.StoreFronts;
 using Newtonsoft.Json;
 
 namespace Mohammad_Hadizadeh_Certificate_Platinum
@@ -30,6 +31,13 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 RouteHandler = new StoreStatusHandler()
             };
             _server.Routes.Add(route_2);
+            
+            HttpCwsRoute route_3 = new HttpCwsRoute("workspace_status")
+            {
+                Name = "workspace_status",
+                RouteHandler = new WorkspaceStatusHandler()
+            };
+            _server.Routes.Add(route_3);
             
             _server.Register();
         }
@@ -139,6 +147,78 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         }
     }
 
+    public class WorkspaceStatusHandler : IHttpCwsHandler
+    {
+        public static event EventHandler<Space> WorkspaceStatusChangedEvent = delegate {  };
+        protected virtual void OnWorkspaceStatusChangedEvent(Space e)
+        {
+            WorkspaceStatusChangedEvent?.Invoke(this, e);
+        }
+        public void ProcessRequest(HttpCwsContext context)
+        {
+            if(context.Request.HttpMethod == "POST")
+            {
+                if(context.Request.RouteData.Route.Name == "workspace_status")
+                {
+                    using (var sr = new StreamReader(context.Request.InputStream))
+                    {
+                        try
+                        {
+                            var data = sr.ReadToEnd();
+                            CrestronConsole.PrintLine(data);
+                            var storeStatus = JsonConvert.DeserializeObject<WorkSpace>(data);
+                            OnWorkspaceStatusChangedEvent(storeStatus);
+                            //ControlSystem.StoreFronts[storeStatus.SpaceId] = storeStatus;
+                        }
+                        catch (Exception e)
+                        {
+                            CrestronConsole.PrintLine(e.Message);
+                        }
+                    }
+                    
+                    try
+                    {
+                        context.Response.StatusCode = 200;
+                        context.Response.StatusDescription = "OK";
+                        context.Response.AppendHeader("Content-Type", "application/json");
+                        context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+                        context.Response.Write("OK" , true);
+                        context.Response.End();
+                    }
+                    catch (Exception e)
+                    {
+                        CrestronConsole.PrintLine(e.Message);
+                    }
+                }
+            }
+            else if(context.Request.HttpMethod == "GET")
+            {
+                if(context.Request.RouteData.Route.Name == "workspace_status")
+                {
+                    try
+                    {
+                        context.Response.StatusCode = 200;
+                        context.Response.StatusDescription = "OK";
+                        context.Response.AppendHeader("Content-Type", "application/json");
+                        context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+                        var myWorkSpaces = 
+                            (from store in Configurator.Stores 
+                                where !store.IS_STOREFRONT 
+                                where ControlSystem.WorkSpaces[store.SPACE_ID] != null 
+                                where ControlSystem.WorkSpaces[store.SPACE_ID].SpaceMode == SpaceMode.MySpace 
+                                select ControlSystem.WorkSpaces[store.SPACE_ID]).ToList();
+                        context.Response.Write(JsonConvert.SerializeObject(myWorkSpaces) , true);
+                        context.Response.End();
+                    }
+                    catch (Exception e)
+                    {
+                        CrestronConsole.PrintLine(e.Message);
+                    }
+                }
+            }
+        }
+    }
+
     public class DefaultHttpCwsRequestHandler : IHttpCwsHandler
     {
         public void ProcessRequest(HttpCwsContext context)
@@ -221,6 +301,30 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     {
                         var status = JsonConvert.DeserializeObject<StoreFront>(response.ContentString);
                         return status;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                CrestronConsole.PrintLine(e.Message);
+                return null;
+            }
+        }
+        
+        public List<WorkSpace> GetWorkSpaces(string host)
+        {
+            try
+            {
+                using (_client = new HttpClient())
+                {
+                    _request.Url = new UrlParser("http://" + host + "/cws/api/workspace_status");
+                    _request.Header.ContentType = "application/json";
+                    _request.RequestType = RequestType.Get;
+
+                    using (var response = _client.Dispatch(_request))
+                    {
+                        var workspaces = JsonConvert.DeserializeObject<List<WorkSpace>>(response.ContentString);
+                        return workspaces;
                     }
                 }
             }
