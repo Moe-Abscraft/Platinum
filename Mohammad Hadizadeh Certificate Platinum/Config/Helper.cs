@@ -1,4 +1,6 @@
-﻿namespace Mohammad_Hadizadeh_Certificate_Platinum
+﻿using System.Collections.Generic;
+
+namespace Mohammad_Hadizadeh_Certificate_Platinum
 {
     public class Store
     {

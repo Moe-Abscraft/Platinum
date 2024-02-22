@@ -1,4 +1,5 @@
-﻿using Crestron.SimplSharp;
+﻿using System.Collections.Generic;
+using Crestron.SimplSharp;
 
 namespace Mohammad_Hadizadeh_Certificate_Platinum
 {
@@ -45,6 +46,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
     
     public class StoreFront : Space
     {
+        public List<WorkSpace> AssignedWorkSpaces { get; set; }
         public override ushort GetModeColor()
         {
             CrestronConsole.PrintLine($"Getting storefront color for {SpaceMode}");

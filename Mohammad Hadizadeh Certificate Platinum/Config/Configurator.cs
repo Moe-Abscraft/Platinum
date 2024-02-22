@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
@@ -130,6 +131,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                 foreach (var store in Stores)
                                 {
                                     CrestronConsole.PrintLine($"Store: {store.SPACE_ID}");
+                                    
                                     if (MacAddressNormalize(store.MACADDR) == MacAddressNormalize(ControlSystem.MacAddress))
                                     {
                                         ControlSystem.MyStore = store;
@@ -146,7 +148,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                             SpaceId = store.SPACE_ID, 
                                             SpaceMode = SpaceMode.Closed,
                                             MemberName = "",
-                                            MemberId = "",
+                                            MemberId = ""
                                         };
                                         
                                         i++;
@@ -177,30 +179,37 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                         ControlSystem.WorkSpaces[store.SPACE_ID] = new WorkSpace()
                                         {
                                             SpaceId = store.SPACE_ID, 
-                                            SpaceMode = SpaceMode.Closed,
+                                            SpaceMode = SpaceMode.Available,
                                             MemberName = "",
                                             MemberId = "",
+                                            AdjacentStorefrontId = Stores[int.Parse(store.SPACE_ID) - 1].SPACE_ID,
                                         };
                                         
                                         switch (store.SPACE_ID)
                                         {
                                             case "1":
                                                 store.Fans = new ushort[] { 2 };
+                                                ControlSystem.WorkSpaces[store.SPACE_ID].AdjacentWorkSpaces = new string[] { "2" };
                                                 break;
                                             case "2":
                                                 store.Fans = new ushort[] { 5 };
+                                                ControlSystem.WorkSpaces[store.SPACE_ID].AdjacentWorkSpaces = new string[] { "1", "3" };
                                                 break;
                                             case "3":
                                                 store.Fans = new ushort[] { 7 };
+                                                ControlSystem.WorkSpaces[store.SPACE_ID].AdjacentWorkSpaces = new string[] { "2", "4" };
                                                 break;
                                             case "4":
                                                 store.Fans = new ushort[] { 10 };
+                                                ControlSystem.WorkSpaces[store.SPACE_ID].AdjacentWorkSpaces = new string[] { "3", "5" };
                                                 break;
                                             case "5":
                                                 store.Fans = new ushort[] { 12 };
+                                                ControlSystem.WorkSpaces[store.SPACE_ID].AdjacentWorkSpaces = new string[] { "4", "6" };
                                                 break;
                                             case "6":
                                                 store.Fans = new ushort[] { 15 };
+                                                ControlSystem.WorkSpaces[store.SPACE_ID].AdjacentWorkSpaces = new string[] { "5" };
                                                 break;
                                         }
                                     }

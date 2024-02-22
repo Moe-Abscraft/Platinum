@@ -21,8 +21,18 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             VPubLoginEnter = 20,
             VPubLoginAck = 21,
-            VPubLogout = 10,
+            VPubLogout = 10
         }
+        
+        public static Dictionary<string, ushort> WorkSpaceSelectJoins = new Dictionary<string, ushort>()
+        {
+            { "1", 31 },
+            { "2", 32 },
+            { "3", 33 },
+            { "4", 34 },
+            { "5", 35 },
+            { "6", 36 }
+        };
 
         public enum VisibilityJoins
         {

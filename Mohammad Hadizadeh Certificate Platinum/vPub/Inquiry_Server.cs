@@ -334,6 +334,30 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 return null;
             }
         }
+        
+        public void UpdateWorkspaceStatusRequest(string host, WorkSpace workSpace)
+        {
+            try
+            {
+                using (_client = new HttpClient())
+                {
+                    _request.Url = new UrlParser("http://" + host + "/cws/api/workspace_status");
+                    _request.Header.ContentType = "application/json";
+                    _request.RequestType = RequestType.Post;
+                    
+                    _request.ContentString = JsonConvert.SerializeObject(workSpace);
+                
+                    using (var response = _client.Dispatch(_request))
+                    {
+                        CrestronConsole.PrintLine(response.ContentString);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                CrestronConsole.PrintLine(e.Message);
+            }
+        }
     }
         
     public class InquiryResponseModel

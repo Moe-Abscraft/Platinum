@@ -156,6 +156,37 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberPubId].StringValue = CardReader.MemberId;
                 Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberExpireDate].StringValue = CardReader.MemberExpiryDateTime.ToString("dd MMMM yyyy");
             });
+
+            foreach (var workSpaceSelectJoin in UI_Actions.WorkSpaceSelectJoins)
+            {
+                Tsw770.BooleanOutput[workSpaceSelectJoin.Value].UserObject = new Action<bool>(b =>
+                {
+                    if (!b) return;
+                    var workspace = ControlSystem.WorkSpaces[workSpaceSelectJoin.Key];
+                    var storeFront = ControlSystem.StoreFronts[ControlSystem.SpaceId];
+                    
+                    if(storeFront.AssignedWorkSpaces == null) storeFront.AssignedWorkSpaces = new List<WorkSpace>();
+                    
+                    var isAdjacent = workspace.AdjacentStorefrontId == ControlSystem.SpaceId;
+                    CrestronConsole.PrintLine(isAdjacent ? "Adjacent Storefront" : "Not Adjacent Storefront");
+                    var isOpen = workspace.SpaceMode != SpaceMode.Closed;
+                    var isAvailable = workspace.SpaceMode != SpaceMode.Occupied;
+                    
+                    if (!isAdjacent || !isOpen || !isAvailable) return;
+                    CrestronConsole.PrintLine("Workspace is being assigned to this storefront.");
+                    
+                    workspace.SpaceMode = SpaceMode.Occupied;
+                    workspace.MemberName = storeFront.MemberName;
+                    workspace.MemberId = storeFront.MemberId;
+                    
+                    storeFront.AssignedWorkSpaces.Add(workspace);
+                    _inquiryRequest.UpdateWorkspaceStatusRequest(ControlSystem.IpAddress, workspace);
+                    foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
+                    {
+                        _inquiryRequest.UpdateWorkspaceStatusRequest(storesIpAddress.ToString(), workspace);
+                    }
+                });
+            }
             
             // Login Success - Reservation Start
             ((List<Action<bool>>)Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.VPubLoginAck].UserObject).Add(b =>
@@ -208,6 +239,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 {
                     storeStatusUpdate.UpdateStoreStatusRequest(storesIpAddress.ToString(), ControlSystem.StoreFronts[ControlSystem.SpaceId]);
                 }
+
+                ControlSystem.StoreFronts[ControlSystem.SpaceId].AssignedWorkSpaces.Clear();
                 
                 _loginTimer.Stop();
                 _loginTimer.Reset();
