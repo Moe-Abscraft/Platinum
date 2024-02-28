@@ -39,6 +39,13 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             };
             _server.Routes.Add(route_3);
             
+            HttpCwsRoute route_4 = new HttpCwsRoute("queue_status")
+            {
+                Name = "queue_status",
+                RouteHandler = new QueueStatusHandler()
+            };
+            _server.Routes.Add(route_4);
+            
             _server.Register();
         }
 
@@ -70,6 +77,54 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         context.Response.AppendHeader("Content-Type", "application/json");
                         context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
                         context.Response.Write(JsonConvert.SerializeObject(new InquiryResponseModel() {MemberId = CardReader.MemberId}) , true);
+                        context.Response.End();
+                    }
+                    catch (Exception e)
+                    {
+                        CrestronConsole.PrintLine(e.Message);
+                    }
+                }
+            }
+        }
+    }
+
+    public class QueueStatusHandler : IHttpCwsHandler
+    {
+        public void ProcessRequest(HttpCwsContext context)
+        {
+            if (context.Request.HttpMethod == "GET")
+            {
+                
+            }
+            else if (context.Request.HttpMethod == "POST")
+            {
+                if (context.Request.RouteData.Route.Name == "queue_status")
+                {
+                    using (var sr = new StreamReader(context.Request.InputStream))
+                    {
+                        try
+                        {
+                            var data = sr.ReadToEnd();
+                            CrestronConsole.PrintLine($"Request: Adding space {data} to the queue");
+                            // data= "workspace","storefront"
+                            var queuedata = data.Split(',');
+                            var workSpace = ControlSystem.WorkSpaces[queuedata[0]];
+                            var storeFront = ControlSystem.StoreFronts[queuedata[1]];
+                            RentalService.WorkspaceStorefrontQueue(workSpace, storeFront, null);
+                        }
+                        catch (Exception e)
+                        {
+                            CrestronConsole.PrintLine(e.Message);
+                        }
+                    }
+                    
+                    try
+                    {
+                        context.Response.StatusCode = 200;
+                        context.Response.StatusDescription = "OK";
+                        context.Response.AppendHeader("Content-Type", "application/json");
+                        context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+                        context.Response.Write("OK" , true);
                         context.Response.End();
                     }
                     catch (Exception e)
@@ -346,6 +401,30 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     _request.RequestType = RequestType.Post;
                     
                     _request.ContentString = JsonConvert.SerializeObject(workSpace);
+                
+                    using (var response = _client.Dispatch(_request))
+                    {
+                        CrestronConsole.PrintLine(response.ContentString);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                CrestronConsole.PrintLine(e.Message);
+            }
+        }
+        
+        public void UpdateQueueStatusRequest(string host, WorkSpace workSpace, StoreFront storeFront)
+        {
+            try
+            {
+                using (_client = new HttpClient())
+                {
+                    _request.Url = new UrlParser("http://" + host + "/cws/api/queue_status");
+                    _request.Header.ContentType = "application/json";
+                    _request.RequestType = RequestType.Post;
+
+                    _request.ContentString = workSpace.SpaceId + "," + storeFront.SpaceId;
                 
                     using (var response = _client.Dispatch(_request))
                     {

@@ -79,14 +79,19 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             CrestronConsole.PrintLine($"Received Status Change Event for Workspace {args.SpaceId} with Mode {args.SpaceMode}");
             
-            ControlSystem.WorkSpaces[args.SpaceId] = null;
-            ControlSystem.WorkSpaces[args.SpaceId] = new WorkSpace()
-            {
-                SpaceId = args.SpaceId, 
-                SpaceMode = args.MemberId == CardReader.MemberId ? SpaceMode.MySpace : args.SpaceMode, 
-                MemberId = args.MemberId, 
-                MemberName = args.MemberName
-            };
+            // ControlSystem.WorkSpaces[args.SpaceId] = null;
+            // ControlSystem.WorkSpaces[args.SpaceId] = new WorkSpace()
+            // {
+            //     SpaceId = args.SpaceId, 
+            //     SpaceMode = args.MemberId == CardReader.MemberId ? SpaceMode.MySpace : args.SpaceMode, 
+            //     MemberId = args.MemberId, 
+            //     MemberName = args.MemberName
+            // };
+
+            var workSpace = ControlSystem.WorkSpaces[args.SpaceId];
+            workSpace.SpaceMode = args.MemberId == CardReader.MemberId ? SpaceMode.MySpace : args.SpaceMode;
+            workSpace.MemberId = args.MemberId;
+            workSpace.MemberName = args.MemberName;
             
             CrestronConsole.PrintLine($"Workspace Mode: {ControlSystem.WorkSpaces[args.SpaceId].SpaceMode}");
             
@@ -165,26 +170,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     var workspace = ControlSystem.WorkSpaces[workSpaceSelectJoin.Key];
                     var storeFront = ControlSystem.StoreFronts[ControlSystem.SpaceId];
                     
-                    if(storeFront.AssignedWorkSpaces == null) storeFront.AssignedWorkSpaces = new List<WorkSpace>();
-                    
-                    var isAdjacent = workspace.AdjacentStorefrontId == ControlSystem.SpaceId;
-                    CrestronConsole.PrintLine(isAdjacent ? "Adjacent Storefront" : "Not Adjacent Storefront");
-                    var isOpen = workspace.SpaceMode != SpaceMode.Closed;
-                    var isAvailable = workspace.SpaceMode != SpaceMode.Occupied;
-                    
-                    if (!isAdjacent || !isOpen || !isAvailable) return;
-                    CrestronConsole.PrintLine("Workspace is being assigned to this storefront.");
-                    
-                    workspace.SpaceMode = SpaceMode.Occupied;
-                    workspace.MemberName = storeFront.MemberName;
-                    workspace.MemberId = storeFront.MemberId;
-                    
-                    storeFront.AssignedWorkSpaces.Add(workspace);
-                    _inquiryRequest.UpdateWorkspaceStatusRequest(ControlSystem.IpAddress, workspace);
-                    foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
-                    {
-                        _inquiryRequest.UpdateWorkspaceStatusRequest(storesIpAddress.ToString(), workspace);
-                    }
+                    RentalService.RentSpace(storeFront, workspace, _inquiryRequest);
                 });
             }
             

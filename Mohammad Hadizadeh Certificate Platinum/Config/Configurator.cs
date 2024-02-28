@@ -148,9 +148,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                             SpaceId = store.SPACE_ID, 
                                             SpaceMode = SpaceMode.Closed,
                                             MemberName = "",
-                                            MemberId = ""
+                                            MemberId = "",
+                                            Area = float.Parse(store.AREA)
                                         };
-                                        
+
                                         i++;
                                         switch (store.SPACE_ID)
                                         {
@@ -183,6 +184,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                             MemberName = "",
                                             MemberId = "",
                                             AdjacentStorefrontId = Stores[int.Parse(store.SPACE_ID) - 1].SPACE_ID,
+                                            StorefrontQueue = new CrestronQueue<string>(),
+                                            Area = float.Parse(store.AREA)
                                         };
                                         
                                         switch (store.SPACE_ID)

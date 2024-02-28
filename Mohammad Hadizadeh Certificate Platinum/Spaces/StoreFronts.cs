@@ -47,6 +47,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
     public class StoreFront : Space
     {
         public List<WorkSpace> AssignedWorkSpaces { get; set; }
+        public float Area { get; set; }
         public override ushort GetModeColor()
         {
             CrestronConsole.PrintLine($"Getting storefront color for {SpaceMode}");
@@ -58,24 +59,6 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     return 0;
                 case SpaceMode.Occupied:
                     return GetOccupiedColor(SpaceId);
-                    // switch (SpaceId)
-                    // {
-                    //     case "A":
-                    //         return 2;
-                    //     case "B":
-                    //         return 3;
-                    //     case "C":
-                    //         return 5;
-                    //     case "D":
-                    //         return 6;
-                    //     case "E":
-                    //         return 7;
-                    //     case "F":
-                    //         return 8;
-                    //     default:
-                    //         return 0;
-                    // }
-
                 case SpaceMode.Closed:
                     return 1;
                 default:

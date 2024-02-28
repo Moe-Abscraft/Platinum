@@ -45,6 +45,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
     {
         public string AdjacentStorefrontId { get; set; }
         public string[] AdjacentWorkSpaces { get; set; }
+
+        public CrestronQueue<string> StorefrontQueue;
+
+        public float Area { get; set; }
         public override ushort GetModeColor()
         {
             CrestronConsole.PrintLine($"Getting workspace color for {SpaceMode}");
