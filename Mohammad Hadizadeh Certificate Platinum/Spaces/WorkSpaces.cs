@@ -1,4 +1,5 @@
 ﻿using Crestron.SimplSharp;
+using Newtonsoft.Json;
 
 namespace Mohammad_Hadizadeh_Certificate_Platinum
 {
@@ -46,8 +47,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         public string AdjacentStorefrontId { get; set; }
         public string[] AdjacentWorkSpaces { get; set; }
 
+        [JsonIgnore]
         public CrestronQueue<string> StorefrontQueue;
-
         public float Area { get; set; }
         public override ushort GetModeColor()
         {
