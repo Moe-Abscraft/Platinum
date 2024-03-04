@@ -30,6 +30,9 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         public static Store[] Stores = new Store[] { };
         public Retail[] Retail = new Retail[] { };
 
+        public static string BuildingIpAddress;
+        public static int BuildingPort;
+
         public Configurator()
         {
             _configFile = Path.Combine(Directory.GetApplicationRootDirectory(), "/user/profile.csv");
@@ -82,6 +85,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 CrestronConsole.PrintLine($"Order IP: {_orderIpAddress}");
                 CrestronConsole.PrintLine($"Order Port: {_orderPort}");
                 CrestronConsole.PrintLine($"Rate: {_rate}");
+
+                ControlSystem.Rate = float.Parse(_rate);
+
+                BuildingIpAddress = _buildingIpAddress;
+                BuildingPort = int.Parse(_buildingPort);
 
                 GetManifest(_manifestStoresFile);
                 GetManifest(_manifestRetailFile);
@@ -157,21 +165,27 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                         {
                                             case "A":
                                                 store.Fans = new ushort[] { 1, 3 };
+                                                store.Walls = new ushort[] { 1 };
                                                 break;
                                             case "B":
                                                 store.Fans = new ushort[] { 4 };
+                                                store.Walls = new ushort[] { 3 };
                                                 break;
                                             case "C":
                                                 store.Fans = new ushort[] { 6, 8 };
+                                                store.Walls = new ushort[] { 5 };
                                                 break;
                                             case "D":
                                                 store.Fans = new ushort[] { 9 };
+                                                store.Walls = new ushort[] { 7 };
                                                 break;
                                             case "E":
                                                 store.Fans = new ushort[] { 11, 13 };
+                                                store.Walls = new ushort[] { 9 };
                                                 break;
                                             case "F":
                                                 store.Fans = new ushort[] { 14, 16 };
+                                                store.Walls = new ushort[] { 11 };
                                                 break;
                                         }
                                     }
@@ -192,26 +206,32 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                         {
                                             case "1":
                                                 store.Fans = new ushort[] { 2 };
+                                                store.Walls = new ushort[] { 2 };
                                                 ControlSystem.WorkSpaces[store.SPACE_ID].AdjacentWorkSpaces = new string[] { "2" };
                                                 break;
                                             case "2":
                                                 store.Fans = new ushort[] { 5 };
+                                                store.Walls = new ushort[] { 2, 4 };
                                                 ControlSystem.WorkSpaces[store.SPACE_ID].AdjacentWorkSpaces = new string[] { "1", "3" };
                                                 break;
                                             case "3":
                                                 store.Fans = new ushort[] { 7 };
+                                                store.Walls = new ushort[] { 4, 6 };
                                                 ControlSystem.WorkSpaces[store.SPACE_ID].AdjacentWorkSpaces = new string[] { "2", "4" };
                                                 break;
                                             case "4":
                                                 store.Fans = new ushort[] { 10 };
+                                                store.Walls = new ushort[] { 6, 8 };
                                                 ControlSystem.WorkSpaces[store.SPACE_ID].AdjacentWorkSpaces = new string[] { "3", "5" };
                                                 break;
                                             case "5":
                                                 store.Fans = new ushort[] { 12 };
+                                                store.Walls = new ushort[] { 8, 10 };
                                                 ControlSystem.WorkSpaces[store.SPACE_ID].AdjacentWorkSpaces = new string[] { "4", "6" };
                                                 break;
                                             case "6":
                                                 store.Fans = new ushort[] { 15 };
+                                                store.Walls = new ushort[] { 10 };
                                                 ControlSystem.WorkSpaces[store.SPACE_ID].AdjacentWorkSpaces = new string[] { "5" };
                                                 break;
                                         }
@@ -226,11 +246,19 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         {
                             if (ValidateManifestRetail(_manifestResponse.ContentString))
                             {
+                                if (Shopping.ShoppingItems == null) Shopping.ShoppingItems = new List<Retail>();
                                 Retail = JArray.Parse(_manifestResponse.ContentString).ToObject<Retail[]>();
-                                // foreach (var retail in Retail)
-                                // {
-                                //     CrestronConsole.PrintLine($"Retail: {retail.UPC}");
-                                // }
+                                foreach (var retail in Retail)
+                                {
+                                    CrestronConsole.PrintLine($"Retail: {retail.UPC}");
+                                    Shopping.ShoppingItems.Add(new Retail()
+                                    {
+                                        VENDOR = retail.VENDOR,
+                                        UPC = retail.UPC,
+                                        PRODUCT = retail.PRODUCT,
+                                        PRICE = retail.PRICE
+                                    });
+                                }
                                 ControlSystem.NumOfMarketItemsAvailable = Retail.Count(r => r.UPC != null);
                                 return;
                             }

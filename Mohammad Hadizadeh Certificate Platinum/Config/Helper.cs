@@ -11,6 +11,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         public string AREA { get; set; }
         public bool OPEN { get; set; }
         public ushort[] Fans { get; set; }
+        
+        public ushort[] Walls { get; set; }
     }
 
     public class Retail

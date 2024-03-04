@@ -1,6 +1,7 @@
 ﻿using System;
 using System.CodeDom;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -9,7 +10,9 @@ using System.Timers;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro;
 using Crestron.SimplSharpPro.DeviceSupport;
+using Crestron.SimplSharpPro.Fusion;
 using Crestron.SimplSharpPro.UI;
+using Mohammad_Hadizadeh_Certificate_Platinum.HGVR;
 using Directory = Crestron.SimplSharp.CrestronIO.Directory;
 using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
 
@@ -27,10 +30,17 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         private readonly CardReader _cardReader;
         
+        private int _page= 1;
+        private bool _viewCart = false;
+
         private InquiryRequest _inquiryRequest;
+        private string _vendor;
+        private readonly List<string> _vendorList = new List<string>();
+        private HGVRConfigurator _roomConfigurator;
         public UI(ControlSystem cs, InquiryRequest inquiryRequest)
         {
             _inquiryRequest = inquiryRequest;
+            _roomConfigurator = new HGVRConfigurator();
             
             Tsw770 = new Tsw770(0x2A, cs);
             Tsw770.SigChange += _tsw770_SigChange;
@@ -96,6 +106,18 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             CrestronConsole.PrintLine($"Workspace Mode: {ControlSystem.WorkSpaces[args.SpaceId].SpaceMode}");
             
             UI_Actions.SetStoreMode(Tsw770, args.SpaceId);
+            
+            // check the queue for the new assignment
+
+            if (workSpace.SpaceMode == SpaceMode.Available)
+            {
+                if (workSpace.StorefrontQueue.Any())
+                {
+                    var nextStorefrontId = workSpace.StorefrontQueue.Dequeue();
+                    var nextStorefront = ControlSystem.StoreFronts[nextStorefrontId];
+                    RentalService.RentSpace(nextStorefront, workSpace, _inquiryRequest);
+                }
+            }
         }
 
         private void StoreStatusHandlerOnSpaceStatusChangedEvent(object sender, Space args)
@@ -117,49 +139,84 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             UI_Actions.SetStoreMode(Tsw770, args.SpaceId);
         }
 
-  
+
         private void _tsw770_OnlineStatusChange(GenericBase currentdevice, OnlineOfflineEventArgs args)
         {
             _timer = new CTimer(UpdateTime, null, 0, 1000);
-            
-            if(!args.DeviceOnLine) return;
+
+            if (!args.DeviceOnLine) return;
 
             Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.VPubLoginAck].UserObject = new List<Action<bool>>();
 
             // Serial Joins
-            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.SpaceId].StringValue = $"Storefront { ControlSystem.SpaceId }";
-            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.Decorator].StringValue = $"{ ControlSystem.SpaceDecor }";
-            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.OsVersion].StringValue = $"{ ControlSystem.OsVersion }";
-            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.IpAddress].StringValue = $"{ ControlSystem.IpAddress }";
-            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MacAddress].StringValue = $"{ ControlSystem.MacAddress.ToUpper() }";
-            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontAvailable].StringValue = $"{ ControlSystem.NumOfStoresAvailable }";
-            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontTotal].StringValue = $"{ ControlSystem.NumOfStoresOpen }";
-            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MarketItemAvailable].StringValue = $"{ ControlSystem.NumOfMarketItemsAvailable }";
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.SpaceId].StringValue =
+                $"Storefront {ControlSystem.SpaceId}";
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.Decorator].StringValue = $"{ControlSystem.SpaceDecor}";
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.OsVersion].StringValue = $"{ControlSystem.OsVersion}";
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.IpAddress].StringValue = $"{ControlSystem.IpAddress}";
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MacAddress].StringValue =
+                $"{ControlSystem.MacAddress.ToUpper()}";
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontAvailable].StringValue =
+                $"{ControlSystem.NumOfStoresAvailable}";
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.StorefrontTotal].StringValue =
+                $"{ControlSystem.NumOfStoresOpen}";
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MarketItemAvailable].StringValue =
+                $"{ControlSystem.NumOfMarketItemsAvailable}";
 
             // Smart Object Joins
-            foreach (var smartObject1BooleanOutput in Tsw770.SmartObjects[1].BooleanOutput)
+            foreach (var smartObjectBooleanOutput in Tsw770.SmartObjects[1].BooleanOutput)
             {
-                smartObject1BooleanOutput.UserObject = new Action<bool>(b =>
+                smartObjectBooleanOutput.UserObject = new Action<bool>(b =>
                 {
                     if (!b) return;
-                    CardReader.CardNumber = UI_Actions.KeypadInput(CardReader.CardNumber.ToString(), smartObject1BooleanOutput.Name);
-                    Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.KeypadInput].StringValue = CardReader.CardNumber > 0 ? CardReader.CardNumber.ToString() : "";
+                    CardReader.CardNumber =
+                        UI_Actions.KeypadInput(CardReader.CardNumber.ToString(), smartObjectBooleanOutput.Name);
+                    Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.KeypadInput].StringValue =
+                        CardReader.CardNumber > 0 ? CardReader.CardNumber.ToString() : "";
                     CrestronConsole.PrintLine(CardReader.CardNumber.ToString());
                 });
             }
+
+            // Filter Items
+            foreach (var item in Shopping.ShoppingItems)
+            {
+                if(_vendorList.Contains(item.VENDOR)) continue;
+                _vendorList.Add(item.VENDOR);
+            }
+
+            for (int i = 0; i < _vendorList.Count; i++)
+            {
+                Tsw770.SmartObjects[2].StringInput[$"Set Item {i + 1} Text"].StringValue = _vendorList[i];
+            }
+
+            Tsw770.SmartObjects[2].UShortInput["Set Number of Items"].UShortValue = (ushort)_vendorList.Count;
             
+            foreach (var smartObjectBooleanOutput in Tsw770.SmartObjects[2].BooleanOutput)
+            {
+                smartObjectBooleanOutput.UserObject = new Action<bool>(b =>
+                {
+                    if (!b) return;
+                    _vendor = _vendorList[(int)(smartObjectBooleanOutput.Number - 11)];
+                    CrestronConsole.PrintLine(_vendor);
+                    UpdateShoppingListView(_viewCart, _vendor);
+                });
+            }
+
             // Boolean Joins
             Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.VPubLoginEnter].UserObject = new Action<bool>(b =>
             {
                 if (!b) return;
+                ControlSystem.ReservationStatus = false;
                 var memberInfo = _cardReader.GetMemberInfo(CardReader.CardNumber);
                 UI_Actions.KeypadInput("", "Misc_1");
                 CrestronConsole.PrintLine($"Member Info: {memberInfo}");
-                
-                Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberAccessMessage].StringValue = CardReader.MembershipIsValid ? "Access Granted" : "Access Denied";
+
+                Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberAccessMessage].StringValue =
+                    CardReader.MembershipIsValid ? "Access Granted" : "Access Denied";
                 Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberName].StringValue = CardReader.MemberName;
                 Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberPubId].StringValue = CardReader.MemberId;
-                Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberExpireDate].StringValue = CardReader.MemberExpiryDateTime.ToString("dd MMMM yyyy");
+                Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberExpireDate].StringValue =
+                    "Exp. " + CardReader.MemberExpiryDateTime.ToString("dd MMMM yyyy");
             });
 
             foreach (var workSpaceSelectJoin in UI_Actions.WorkSpaceSelectJoins)
@@ -169,15 +226,16 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     if (!b) return;
                     var workspace = ControlSystem.WorkSpaces[workSpaceSelectJoin.Key];
                     var storeFront = ControlSystem.StoreFronts[ControlSystem.SpaceId];
-                    
+
                     RentalService.RentSpace(storeFront, workspace, _inquiryRequest);
                 });
             }
-            
+
             // Login Success - Reservation Start
             ((List<Action<bool>>)Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.VPubLoginAck].UserObject).Add(b =>
             {
-                if(!b) return;
+                if (!b) return;
+                if (ControlSystem.ReservationStatus) return;
                 CrestronConsole.PrintLine("VPubLoginAck");
                 CrestronConsole.PrintLine($"MembershipIsValid: {CardReader.MembershipIsValid}");
                 if (CardReader.MembershipIsValid)
@@ -186,27 +244,38 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.OperatingPage].BoolValue = true;
                     UI_Actions.TogglePopup(Tsw770, UI_Actions.PopupsJoinGroup["ClosePopUps"][0]);
                     UI_Actions.TogglePopup(Tsw770, UI_Actions.PopupsJoinGroup["Operation_Storefronts"][0]);
-                    
+
                     _startLoginTime = DateTime.Now;
                     _loginTimer.Start();
-                    
+
                     Task.Run(LoginTimer_Elapsed, _cancellationToken);
 
                     // Start Fans in Store
+                    _roomConfigurator.TurnOnFans(ControlSystem.MyStore.Fans);
                     foreach (var fan in ControlSystem.MyStore.Fans)
                     {
                         CrestronConsole.PrintLine($"Start Fan: {fan}");
                     }
-                    
+
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].SpaceMode = SpaceMode.Occupied;
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberId = CardReader.MemberId;
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberName = CardReader.MemberName;
-                    _inquiryRequest.UpdateStoreStatusRequest(ControlSystem.IpAddress, ControlSystem.StoreFronts[ControlSystem.SpaceId]);
+                    _inquiryRequest.UpdateStoreStatusRequest(ControlSystem.IpAddress,
+                        ControlSystem.StoreFronts[ControlSystem.SpaceId]);
                     foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
                     {
-                        _inquiryRequest.UpdateStoreStatusRequest(storesIpAddress.ToString(), ControlSystem.StoreFronts[ControlSystem.SpaceId]);
+                        _inquiryRequest.UpdateStoreStatusRequest(storesIpAddress.ToString(),
+                            ControlSystem.StoreFronts[ControlSystem.SpaceId]);
                     }
                 }
+
+                Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.StorefrontsPage].BoolValue = true;
+                _page = 1;
+                Tsw770.UShortInput[(ushort)UI_Actions.AnalogJoins.ShoppingItemsMode].UShortValue = 1;
+                Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOn].BoolValue = true;
+                Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOff].BoolValue = false;
+                UpdateShoppingListView(_viewCart, string.Empty);
+                ControlSystem.ReservationStatus = true;
             });
 
             // Reservation End
@@ -214,29 +283,54 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             {
                 Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.OperatingPage].BoolValue = false;
                 Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.MessagePage].BoolValue = true;
-                
+
                 var storeStatusUpdate = new InquiryRequest();
 
                 ControlSystem.StoreFronts[ControlSystem.SpaceId].SpaceMode = SpaceMode.Available;
                 ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberId = "";
                 ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberName = "";
-                storeStatusUpdate.UpdateStoreStatusRequest(ControlSystem.IpAddress, ControlSystem.StoreFronts[ControlSystem.SpaceId]);
-                foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
+
+                // Update status of the assigned workspaces to available
+                foreach (var space in ControlSystem.StoreFronts[ControlSystem.SpaceId].AssignedWorkSpaces)
                 {
-                    storeStatusUpdate.UpdateStoreStatusRequest(storesIpAddress.ToString(), ControlSystem.StoreFronts[ControlSystem.SpaceId]);
+                    space.SpaceMode = SpaceMode.Available;
+                    space.MemberName = "";
+                    space.MemberId = "";
+
+                    _inquiryRequest.UpdateWorkspaceStatusRequest(ControlSystem.IpAddress, space);
+                    foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
+                    {
+                        _inquiryRequest.UpdateWorkspaceStatusRequest(storesIpAddress.ToString(), space);
+                    }
                 }
 
-                ControlSystem.StoreFronts[ControlSystem.SpaceId].AssignedWorkSpaces.Clear();
-                
+                storeStatusUpdate.UpdateStoreStatusRequest(ControlSystem.IpAddress,
+                    ControlSystem.StoreFronts[ControlSystem.SpaceId]);
+                foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
+                {
+                    storeStatusUpdate.UpdateStoreStatusRequest(storesIpAddress.ToString(),
+                        ControlSystem.StoreFronts[ControlSystem.SpaceId]);
+                }
+
+                ControlSystem.StoreFronts[ControlSystem.SpaceId].AssignedWorkSpaces?.Clear();
+
                 _loginTimer.Stop();
                 _loginTimer.Reset();
                 _cancellationTokenSource.Cancel();
+
+                Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberExpireDate].StringValue =
+                    "Total Charges " + RentalService.TotalCharge;
+                Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberAccessMessage].StringValue =
+                    "Reservation Ended";
+                Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.VPubLoginMessage].BoolValue = true;
+                RentalService.TotalCharge = 0;
+                ControlSystem.ReservationStatus = true;
             });
-            
+
             // Subpage Joins
             foreach (var popup in UI_Actions.PopupsJoinGroup.Values.SelectMany(joins => joins.Where(j => j > 0)))
             {
-                if(Tsw770.BooleanOutput[popup].UserObject == null)
+                if (Tsw770.BooleanOutput[popup].UserObject == null)
                     Tsw770.BooleanOutput[popup].UserObject = new List<Action<bool>>();
                 ((List<Action<bool>>)Tsw770.BooleanOutput[popup].UserObject)?.Add(b =>
                 {
@@ -244,6 +338,65 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     UI_Actions.TogglePopup(Tsw770, popup);
                 });
             }
+
+            // Shopping Items Control
+            Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.ShoppingListUp].UserObject = new Action<bool>(b =>
+            {
+                if (!b) return;
+                _page += 1;
+                UpdateShoppingListView(_viewCart, string.Empty);
+            });
+
+            Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.ShoppingListDn].UserObject = new Action<bool>(b =>
+            {
+                if (!b) return;
+                _page -= 1;
+                UpdateShoppingListView(_viewCart, string.Empty);
+            });
+
+            for (uint i = 81; i <= 85; i++)
+            {
+                var i1 = i;
+                Tsw770.BooleanOutput[i].UserObject = new Action<bool>(b =>
+                {
+                    if (!b) return;
+                    UpdateShoppingCart(i1 - 80, _vendor);
+                });
+            }
+
+            Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.ViewShoppingCart].UserObject = new Action<bool>(b =>
+            {
+                if (!b) return;
+                _viewCart = !_viewCart;
+                Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ViewShoppingCart].BoolValue = _viewCart;
+                _page = 1;
+                Tsw770.UShortInput[(ushort)UI_Actions.AnalogJoins.ShoppingItemsMode].UShortValue =
+                    _viewCart ? (ushort)2 : (ushort)1;
+                UpdateShoppingListView(_viewCart, string.Empty);
+            });
+
+            // Vendor List Filter
+            Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOn].UserObject =
+                new Action<bool>(b =>
+                    {
+                        if(!b) return;
+                        _page = 1;
+                        _vendor = string.Empty;
+                        Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOn].BoolValue = true;
+                        Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOff].BoolValue = false;
+                    }
+                );
+            
+            Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOff].UserObject =
+                new Action<bool>(b =>
+                    {
+                        if(!b) return;
+                        _page = 1;
+                        _vendor = string.Empty;
+                        Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOn].BoolValue = false;
+                        Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOff].BoolValue = true;
+                    }
+                );
         }
         
         private void LoginTimer_Elapsed()
@@ -253,6 +406,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.TimerHours].StringValue = _loginTimer.Elapsed.Hours.ToString("00");
                 Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.TimerMinutes].StringValue = _loginTimer.Elapsed.Minutes.ToString("00");
                 Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.TimerSeconds].StringValue = _loginTimer.Elapsed.Seconds.ToString("00");
+                if (_loginTimer.Elapsed.Seconds == 0)
+                {
+                    Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.TotalCharge].StringValue = RentalService.GetTotalCharge(_loginTimer).ToString(CultureInfo.InvariantCulture);
+                }
                 Thread.Sleep(1000);
             }
         }
@@ -313,6 +470,74 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+        public void UpdateShoppingListView(bool viewCart, string vendor)
+        {
+            CrestronConsole.PrintLine(_page.ToString());
+            if (_page < 1) _page = 1;
+            if (_page > Shopping.ShoppingItems.Count / 5) _page = Shopping.ShoppingItems.Count / 5;
+            
+            List<Retail> items;
+            if (viewCart)
+                items = Shopping.GetCartList(_page);
+            else
+                if(vendor.Length < 1)
+                    items = Shopping.GetShoppingList(_page);
+                else
+                {
+                    items = Shopping.GetShoppingList(_page, vendor);
+                }
+            foreach (var item in items)
+            {
+                CrestronConsole.PrintLine(item.PRODUCT);
+            }
+            for (var i = 0; i < 5; i++)
+            {
+                Tsw770.StringInput[(ushort)(61 + i)].StringValue = string.Empty;
+                Tsw770.StringInput[(ushort)(81 + i)].StringValue = string.Empty; 
+                Tsw770.StringInput[(ushort)(91 + i)].StringValue = string.Empty;
+
+                Tsw770.BooleanInput[(ushort)(101 + i)].BoolValue = false;
+            }
+
+            var count = items.Count > 5 ? 5 : items.Count;
+            for (var i = 0; i < count; i++)
+            {
+                Tsw770.StringInput[(ushort)(61 + i)].StringValue = items[i] != null ? items[i].VENDOR : string.Empty;
+            }
+            for (var i = 0; i < count; i++)
+            {
+                Tsw770.StringInput[(ushort)(81 + i)].StringValue = items[i] != null ? items[i].PRODUCT : string.Empty;
+            }
+            for (var i = 0; i < count; i++)
+            {
+                Tsw770.StringInput[(ushort)(91 + i)].StringValue = items[i] != null ? items[i].PRICE : string.Empty;
+            }
+            for (int i = 0; i < count; i++)
+            {
+                Tsw770.BooleanInput[(ushort)(101 + i)].BoolValue = true;
+            }
+        }
+
+        public void UpdateShoppingCart(uint item, string vendor)
+        {
+            var itemIndex = (_page * 5 - 5) + item - 1;
+            if(!_viewCart)
+                if(vendor.Length < 1)
+                    Shopping.AddToCart((int)itemIndex);
+                else
+                {
+                    Shopping.AddToCart((int)itemIndex, vendor);
+                }
+            else
+            {
+                Shopping.RemoveFromCart((int)itemIndex);
+                UpdateShoppingListView(_viewCart, string.Empty);
+            }
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.TotalShoppingItemsInCart].StringValue =
+                Shopping.ShoppingCart.Count.ToString();
+            
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.TotalCharge].StringValue = RentalService.GetTotalCharge(_loginTimer).ToString(CultureInfo.InvariantCulture);
         }
     }
 }

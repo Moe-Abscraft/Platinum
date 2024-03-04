@@ -3,11 +3,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro;
+using Mohammad_Hadizadeh_Certificate_Platinum.HGVR;
 
 namespace Mohammad_Hadizadeh_Certificate_Platinum
 {
     public class RentalService
     {
+        public static float TotalCharge;
         public static void RentSpace(StoreFront storeFront, WorkSpace workSpace, InquiryRequest inquiryRequest)
         {
             if(storeFront.AssignedWorkSpaces == null) storeFront.AssignedWorkSpaces = new List<WorkSpace>();
@@ -15,6 +17,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             {
                 if(storeFront.AssignedWorkSpaces.Exists(ws => ws.SpaceId == workSpace.SpaceId))
                 {
+                    // Release a workspace
+                    
                     CrestronConsole.PrintLine("Workspace is being released from this storefront.");
                     var indexOfMainWorkspace = storeFront.AssignedWorkSpaces.FindIndex(ws => ws.SpaceId == workSpace.SpaceId);
                     
@@ -42,6 +46,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 }
             }
                     
+            // Reserve a workspace
+            
             var isAdjacent = workSpace.AdjacentStorefrontId == ControlSystem.SpaceId;
             if (!isAdjacent)
             {
@@ -104,6 +110,16 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             {
                 inquiryRequest.UpdateQueueStatusRequest(storesIpAddress.ToString(), workSpace, storeFront);
             }
+        }
+
+        public static float GetTotalCharge(Stopwatch stopwatch)
+        {
+            var storeFront = ControlSystem.StoreFronts[ControlSystem.MyStore.SPACE_ID];
+            var area = storeFront.Area;
+            var totalTime = stopwatch.Elapsed.Hours * 60 + stopwatch.Elapsed.Minutes;
+            var totalCharge = area * ControlSystem.Rate * totalTime;
+            TotalCharge += totalCharge;
+            return TotalCharge;
         }
     }
 }

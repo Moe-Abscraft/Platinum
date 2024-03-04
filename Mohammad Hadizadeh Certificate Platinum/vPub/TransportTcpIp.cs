@@ -213,6 +213,15 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 _dataTxTimer.Reset(500);
             }
         }
+
+        public void SendBytes(byte[] data)
+        {
+            if (_client.SendData(data, data.Length) == SocketErrorCodes.SOCKET_OK)
+            {
+                // _dataTxEvent.Set();
+                _dataTxTimer.Reset(500);
+            }
+        }
     }
 
     public class MessageEventArgs : EventArgs

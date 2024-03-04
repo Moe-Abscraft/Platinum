@@ -19,9 +19,24 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         public enum DigitalJoins
         {
+            ViewShoppingCart = 8,
             VPubLoginEnter = 20,
             VPubLoginAck = 21,
-            VPubLogout = 10
+            VPubLogout = 10,
+            ShoppingListUp = 61,
+            ShoppingListDn = 62,
+            ShoppingListAction_Item1 = 81,
+            ShoppingListAction_Item2 = 82,
+            ShoppingListAction_Item3 = 83,
+            ShoppingListAction_Item4 = 84,
+            ShoppingListAction_Item5 = 85,
+            ShoppingListFilterOn = 91,
+            ShoppingListFilterOff = 92,
+            ShoppingListActionBtn1_Visibility = 101,
+            ShoppingListActionBtn2_Visibility = 102,
+            ShoppingListActionBtn3_Visibility = 103,
+            ShoppingListActionBtn4_Visibility = 104,
+            ShoppingListActionBtn5_Visibility = 105,
         }
         
         public static Dictionary<string, ushort> WorkSpaceSelectJoins = new Dictionary<string, ushort>()
@@ -59,6 +74,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             TimerHours = 16,
             TimerMinutes = 17,
             TimerSeconds = 18,
+            TotalCharge = 19,
+            TotalShoppingItemsInCart = 20,
             StorefrontStatusA = 21,
             StorefrontStatusB = 22,
             StorefrontStatusC = 23,
@@ -83,6 +100,16 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             WorkSpaceButtonAction4 = 42,
             WorkSpaceButtonAction5 = 43,
             WorkSpaceButtonAction6 = 44,
+            ShoppingItems1_Name = 61,
+            ShoppingItems2_Name = 62,
+            ShoppingItems3_Name = 63,
+            ShoppingItems4_Name = 64,
+            ShoppingItems5_Name = 65,
+            ShoppingItems1_Description = 81,
+            ShoppingItems2_Description = 82,
+            ShoppingItems3_Description = 83,
+            ShoppingItems4_Description = 84,
+            ShoppingItems5_Description = 85,
         }
 
         public enum AnalogJoins
@@ -99,6 +126,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             WorkSpaceMode4 = 10,
             WorkSpaceMode5 = 11,
             WorkSpaceMode6 = 12,
+            ShoppingItemsMode = 13
         }
 
         public enum SubpageJoins
