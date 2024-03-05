@@ -251,7 +251,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     Task.Run(LoginTimer_Elapsed, _cancellationToken);
 
                     // Start Fans in Store
-                    _roomConfigurator.TurnOnFans(ControlSystem.MyStore.Fans);
+                    HGVRConfigurator.TurnOnFans(ControlSystem.MyStore.Fans);
+                    HGVRConfigurator.OpenWalls(ControlSystem.MyStore.Walls);
                     foreach (var fan in ControlSystem.MyStore.Fans)
                     {
                         CrestronConsole.PrintLine($"Start Fan: {fan}");

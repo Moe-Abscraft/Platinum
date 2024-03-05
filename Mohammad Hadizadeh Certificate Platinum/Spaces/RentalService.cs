@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro;
+using Crestron.SimplSharpPro.AudioDistribution;
 using Mohammad_Hadizadeh_Certificate_Platinum.HGVR;
 
 namespace Mohammad_Hadizadeh_Certificate_Platinum
@@ -86,6 +87,24 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             storeFront.AssignedWorkSpaces.Add(workSpace);
             storeFront.Area += workSpace.Area;
             CrestronConsole.PrintLine($"New Area: {storeFront.Area}");
+
+
+            var workspaces = Configurator.Stores.Where(s => !s.IS_STOREFRONT);
+            var assignedWorkspaces =
+                workspaces.Where(ws => storeFront.AssignedWorkSpaces.Any(s => s.SpaceId == ws.SPACE_ID));
+            List<ushort> wallsToOpen = new List<ushort>();
+            foreach (var workspace in assignedWorkspaces)
+            {
+                foreach (var wall in workspace.Walls)
+                {
+                    wallsToOpen.Add(wall);
+                }
+            }
+            wallsToOpen = wallsToOpen.GroupBy(x => x)
+                .Where(g => g.Count() > 1)
+                .Select(y => y.Key)
+                .ToList();
+            HGVRConfigurator.OpenWalls(wallsToOpen.ToArray());
 
             inquiryRequest.UpdateWorkspaceStatusRequest(ControlSystem.IpAddress, workSpace);
             foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
