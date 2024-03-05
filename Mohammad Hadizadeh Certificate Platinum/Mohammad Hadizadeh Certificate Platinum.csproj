@@ -139,6 +139,7 @@
         <Compile Include="ControlSystem.cs" />
         <Compile Include="HGVR\HGVRConfigurator.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
+        <Compile Include="Shopping\QuirkyTech.cs" />
         <Compile Include="Shopping\Shopping.cs" />
         <Compile Include="Spaces\RentalService.cs" />
         <Compile Include="Spaces\Space.cs" />

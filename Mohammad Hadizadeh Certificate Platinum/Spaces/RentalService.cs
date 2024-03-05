@@ -33,13 +33,39 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         
                         storeFront.Area -= space.Area;
                         CrestronConsole.PrintLine($"New Area: {storeFront.Area}");
-                    
+                        
+                        QuirkyTech.EndRentalService(space.SpaceId);
+
                         inquiryRequest.UpdateWorkspaceStatusRequest(ControlSystem.IpAddress, space);
                         foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
                         {
                             inquiryRequest.UpdateWorkspaceStatusRequest(storesIpAddress.ToString(), space);
                         }
                     }
+                    
+                    var hgvrWorkspaces = Configurator.Stores.Where(s => !s.IS_STOREFRONT);
+                    var hgvrAssignedWorkspaces =
+                        hgvrWorkspaces.Where(ws => storeFront.AssignedWorkSpaces.Any(s => s.SpaceId == ws.SPACE_ID));
+                    List<ushort> wallsToClose = new List<ushort>();
+                    List<ushort> fansToTurnOff = new List<ushort>();
+                    foreach (var workspace in hgvrAssignedWorkspaces)
+                    {
+                        foreach (var wall in workspace.Walls)
+                        {
+                            wallsToClose.Add(wall);
+                        }
+                        foreach (var fan in workspace.Fans)
+                        {
+                            fansToTurnOff.Add(fan);
+                        }
+                    }
+
+                    wallsToClose = wallsToClose.GroupBy(x => x)
+                        .Where(g => g.Count() > 1)
+                        .Select(y => y.Key)
+                        .ToList();
+                    HGVRConfigurator.CloseWalls(wallsToClose.ToArray());
+                    HGVRConfigurator.TurnOffFans(fansToTurnOff.ToArray());
                     
                     storeFront.AssignedWorkSpaces.RemoveRange(indexOfMainWorkspace, spacesToRemove.Count());
 
@@ -87,24 +113,32 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             storeFront.AssignedWorkSpaces.Add(workSpace);
             storeFront.Area += workSpace.Area;
             CrestronConsole.PrintLine($"New Area: {storeFront.Area}");
-
+            
+            QuirkyTech.StartRentalService(workSpace.SpaceId);
 
             var workspaces = Configurator.Stores.Where(s => !s.IS_STOREFRONT);
             var assignedWorkspaces =
                 workspaces.Where(ws => storeFront.AssignedWorkSpaces.Any(s => s.SpaceId == ws.SPACE_ID));
             List<ushort> wallsToOpen = new List<ushort>();
+            List<ushort> fansToTurnOn = new List<ushort>();
             foreach (var workspace in assignedWorkspaces)
             {
                 foreach (var wall in workspace.Walls)
                 {
                     wallsToOpen.Add(wall);
                 }
+                foreach (var fan in workspace.Fans)
+                {
+                    fansToTurnOn.Add(fan);
+                }
             }
+
             wallsToOpen = wallsToOpen.GroupBy(x => x)
                 .Where(g => g.Count() > 1)
                 .Select(y => y.Key)
                 .ToList();
             HGVRConfigurator.OpenWalls(wallsToOpen.ToArray());
+            HGVRConfigurator.TurnOnFans(fansToTurnOn.ToArray());
 
             inquiryRequest.UpdateWorkspaceStatusRequest(ControlSystem.IpAddress, workSpace);
             foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)

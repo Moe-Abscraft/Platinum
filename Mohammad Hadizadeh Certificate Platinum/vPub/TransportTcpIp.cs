@@ -44,6 +44,12 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             DataReceived(this, e);
         }
+        
+        public event EventHandler<MessageBytesEventArgs> DataReceivedBytes = delegate { };
+        protected virtual void OnDataReceivedBytes(MessageBytesEventArgs e)
+        {
+            DataReceivedBytes(this, e);
+        }
 
         private CrestronQueue<string> _dataTxQueue;
         private readonly CEvent _dataTxEvent;
@@ -172,6 +178,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             {
                 var data = new string(client.IncomingDataBuffer.Take(numOfBytes).Select(b => (char)b).ToArray());
                 OnDataReceived(new MessageEventArgs() { Message = data, Id = _id });
+                OnDataReceivedBytes(new MessageBytesEventArgs() { Message = client.IncomingDataBuffer.Take(numOfBytes).ToArray(), Id = _id });
 
                 client.ReceiveDataAsync(ReceiveDataCallback);
             }
@@ -227,6 +234,12 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
     public class MessageEventArgs : EventArgs
     {
         public string Message { get; set; }
+        public uint Id { get; set; }
+    }
+    
+    public class MessageBytesEventArgs : EventArgs
+    {
+        public byte[] Message { get; set; }
         public uint Id { get; set; }
     }
 }

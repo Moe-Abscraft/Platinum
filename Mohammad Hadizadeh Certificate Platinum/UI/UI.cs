@@ -37,10 +37,12 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         private string _vendor;
         private readonly List<string> _vendorList = new List<string>();
         private HGVRConfigurator _roomConfigurator;
+        private QuirkyTech _quirkyTech;
         public UI(ControlSystem cs, InquiryRequest inquiryRequest)
         {
             _inquiryRequest = inquiryRequest;
-            _roomConfigurator = new HGVRConfigurator();
+            _roomConfigurator = new HGVRConfigurator(_inquiryRequest);
+            _quirkyTech = new QuirkyTech();
             
             Tsw770 = new Tsw770(0x2A, cs);
             Tsw770.SigChange += _tsw770_SigChange;
@@ -83,6 +85,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
             StoreStatusHandler.SpaceStatusChangedEvent += StoreStatusHandlerOnSpaceStatusChangedEvent;
             WorkspaceStatusHandler.WorkspaceStatusChangedEvent += WorkspaceStatusHandlerOnWorkspaceStatusChangedEvent;
+
+            _roomConfigurator.TemperatureChanged += (sender, args) =>
+            {
+                Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.Temperature].StringValue = args.Temperature.ToString(CultureInfo.InvariantCulture);
+            };
         }
 
         private void WorkspaceStatusHandlerOnWorkspaceStatusChangedEvent(object sender, Space args)
@@ -230,6 +237,20 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     RentalService.RentSpace(storeFront, workspace, _inquiryRequest);
                 });
             }
+            
+            Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.ShoppingListCheckout].UserObject = new Action<bool>(b =>
+            {
+                if (!b) return;
+                QuirkyTech.SendOrder(Shopping.ShoppingCart);
+                Shopping.ShoppingCart.Clear();
+                _viewCart = false;
+                Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ViewShoppingCart].BoolValue = _viewCart;
+                _page = 1;
+                Tsw770.UShortInput[(ushort)UI_Actions.AnalogJoins.ShoppingItemsMode].UShortValue =
+                    _viewCart ? (ushort)2 : (ushort)1;
+                UpdateShoppingListView(_viewCart, string.Empty);
+                Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.TotalShoppingItemsInCart].StringValue = string.Empty;
+            });
 
             // Login Success - Reservation Start
             ((List<Action<bool>>)Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.VPubLoginAck].UserObject).Add(b =>
@@ -250,14 +271,6 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                     Task.Run(LoginTimer_Elapsed, _cancellationToken);
 
-                    // Start Fans in Store
-                    HGVRConfigurator.TurnOnFans(ControlSystem.MyStore.Fans);
-                    HGVRConfigurator.OpenWalls(ControlSystem.MyStore.Walls);
-                    foreach (var fan in ControlSystem.MyStore.Fans)
-                    {
-                        CrestronConsole.PrintLine($"Start Fan: {fan}");
-                    }
-
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].SpaceMode = SpaceMode.Occupied;
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberId = CardReader.MemberId;
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberName = CardReader.MemberName;
@@ -268,6 +281,18 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         _inquiryRequest.UpdateStoreStatusRequest(storesIpAddress.ToString(),
                             ControlSystem.StoreFronts[ControlSystem.SpaceId]);
                     }
+                    
+                    // Start Fans in Store
+                    HGVRConfigurator.TurnOnFans(ControlSystem.MyStore.Fans);
+                    HGVRConfigurator.OpenWalls(ControlSystem.MyStore.Walls);
+                    foreach (var fan in ControlSystem.MyStore.Fans)
+                    {
+                        CrestronConsole.PrintLine($"Start Fan: {fan}");
+                    }
+                    
+                    // Order system
+                    QuirkyTech.StartRentalService(ControlSystem.SpaceId);
+                    QuirkyTech.SetDigitalSignageMessage(ControlSystem.SpaceId, "Welcome to your space");
                 }
 
                 Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.StorefrontsPage].BoolValue = true;
@@ -282,10 +307,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             // Reservation End
             Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.VPubLogout].UserObject = new Action<bool>(b =>
             {
+                if(!b) return;
                 Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.OperatingPage].BoolValue = false;
                 Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.MessagePage].BoolValue = true;
 
-                var storeStatusUpdate = new InquiryRequest();
+                //var storeStatusUpdate = new InquiryRequest();
 
                 ControlSystem.StoreFronts[ControlSystem.SpaceId].SpaceMode = SpaceMode.Available;
                 ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberId = "";
@@ -304,12 +330,20 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         _inquiryRequest.UpdateWorkspaceStatusRequest(storesIpAddress.ToString(), space);
                     }
                 }
+                
+                // Start Fans in Store
+                HGVRConfigurator.TurnOffFans(ControlSystem.MyStore.Fans);
+                HGVRConfigurator.CloseWalls(ControlSystem.MyStore.Walls);
+                
+                // Order system
+                QuirkyTech.EndRentalService(ControlSystem.SpaceId);
+                QuirkyTech.DeleteDigitalSignageMessage(ControlSystem.SpaceId, "Welcome to your space");
 
-                storeStatusUpdate.UpdateStoreStatusRequest(ControlSystem.IpAddress,
+                _inquiryRequest.UpdateStoreStatusRequest(ControlSystem.IpAddress,
                     ControlSystem.StoreFronts[ControlSystem.SpaceId]);
                 foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
                 {
-                    storeStatusUpdate.UpdateStoreStatusRequest(storesIpAddress.ToString(),
+                    _inquiryRequest.UpdateStoreStatusRequest(storesIpAddress.ToString(),
                         ControlSystem.StoreFronts[ControlSystem.SpaceId]);
                 }
 
@@ -524,7 +558,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             var itemIndex = (_page * 5 - 5) + item - 1;
             if(!_viewCart)
-                if(vendor.Length < 1)
+                if(string.IsNullOrEmpty(vendor))
                     Shopping.AddToCart((int)itemIndex);
                 else
                 {

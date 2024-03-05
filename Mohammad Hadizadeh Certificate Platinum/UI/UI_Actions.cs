@@ -37,6 +37,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             ShoppingListActionBtn3_Visibility = 103,
             ShoppingListActionBtn4_Visibility = 104,
             ShoppingListActionBtn5_Visibility = 105,
+            ShoppingListCheckout = 111,
         }
         
         public static Dictionary<string, ushort> WorkSpaceSelectJoins = new Dictionary<string, ushort>()
@@ -110,6 +111,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             ShoppingItems3_Description = 83,
             ShoppingItems4_Description = 84,
             ShoppingItems5_Description = 85,
+            Temperature = 130
         }
 
         public enum AnalogJoins

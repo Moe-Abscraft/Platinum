@@ -32,6 +32,9 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         public static string BuildingIpAddress;
         public static int BuildingPort;
+        
+        public static string OrderIpAddress;
+        public static int OrderPort;
 
         public Configurator()
         {
@@ -90,6 +93,9 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                 BuildingIpAddress = _buildingIpAddress;
                 BuildingPort = int.Parse(_buildingPort);
+                
+                OrderIpAddress = _orderIpAddress;
+                OrderPort = int.Parse(_orderPort);
 
                 GetManifest(_manifestStoresFile);
                 GetManifest(_manifestRetailFile);

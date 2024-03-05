@@ -5,6 +5,7 @@ using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.WebScripting;
+using Mohammad_Hadizadeh_Certificate_Platinum.HGVR;
 using Newtonsoft.Json;
 
 namespace Mohammad_Hadizadeh_Certificate_Platinum
@@ -45,6 +46,13 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 RouteHandler = new QueueStatusHandler()
             };
             _server.Routes.Add(route_4);
+            
+            HttpCwsRoute route_5 = new HttpCwsRoute("wall_status")
+            {
+                Name = "wall_status",
+                RouteHandler = new WallStatusHandler()
+            };
+            _server.Routes.Add(route_5);
             
             _server.Register();
         }
@@ -121,7 +129,58 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     try
                     {
                         context.Response.StatusCode = 200;
-                        context.Response.StatusDescription = "OK";
+                        context.Response.StatusDescription = "QueueUpdate:OK";
+                        context.Response.AppendHeader("Content-Type", "application/json");
+                        context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+                        context.Response.Write("OK" , true);
+                        context.Response.End();
+                    }
+                    catch (Exception e)
+                    {
+                        CrestronConsole.PrintLine(e.Message);
+                    }
+                }
+            }
+        }
+    }
+    
+    public class WallStatusHandler : IHttpCwsHandler
+    {
+        public void ProcessRequest(HttpCwsContext context)
+        {
+            if (context.Request.HttpMethod == "GET")
+            {
+                
+            }
+            else if (context.Request.HttpMethod == "POST")
+            {
+                if (context.Request.RouteData.Route.Name == "wall_status")
+                {
+                    using (var sr = new StreamReader(context.Request.InputStream))
+                    {
+                        try
+                        {
+                            var data = sr.ReadToEnd();
+                            var buildingStatus = JsonConvert.DeserializeObject<BuildingStatus>(data);
+                            foreach (var wall in buildingStatus.Walls)
+                            {
+                                HGVRConfigurator.UpdateWallStatus(wall.Key, wall.Value);
+                            }
+                            foreach (var fan in buildingStatus.Fans)
+                            {
+                                HGVRConfigurator.UpdateFanStatus(fan.Key, fan.Value);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            CrestronConsole.PrintLine(e.Message);
+                        }
+                    }
+                    
+                    try
+                    {
+                        context.Response.StatusCode = 200;
+                        context.Response.StatusDescription = "BuildingStatusUpdate:OK";
                         context.Response.AppendHeader("Content-Type", "application/json");
                         context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
                         context.Response.Write("OK" , true);
@@ -437,10 +496,46 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 CrestronConsole.PrintLine(e.Message);
             }
         }
+        
+        public void UpdateBuildingStatusRequest(string host, Dictionary<ushort, bool> walls, Dictionary<ushort, bool> fans)
+        {
+            try
+            {
+                using (_client = new HttpClient())
+                {
+                    _request.Url = new UrlParser("http://" + host + "/cws/api/wall_status");
+                    _request.Header.ContentType = "application/json";
+                    _request.RequestType = RequestType.Post;
+                    
+                    var buildingStatus = new BuildingStatus()
+                    {
+                        Walls = walls,
+                        Fans = fans
+                    };
+                    
+                    _request.ContentString = JsonConvert.SerializeObject(buildingStatus);
+                
+                    using (var response = _client.Dispatch(_request))
+                    {
+                        CrestronConsole.PrintLine(response.ContentString);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                CrestronConsole.PrintLine(e.Message);
+            }
+        }
     }
         
     public class InquiryResponseModel
     {
         public string MemberId { get; set; }
+    }
+    
+    public class BuildingStatus
+    {
+        public Dictionary<ushort, bool> Walls { get; set; }
+        public Dictionary<ushort, bool> Fans { get; set; }
     }
 }
