@@ -144,7 +144,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                 _dataTxQueue = new CrestronQueue<string>();
                 // CrestronInvoke.BeginInvoke(DataTxDequeue);
-                SendData("Hello Moe!!");
+                // SendData("Hello Moe!!");
             }
             else
             {

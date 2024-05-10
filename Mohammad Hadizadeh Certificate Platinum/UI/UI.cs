@@ -38,6 +38,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         private readonly List<string> _vendorList = new List<string>();
         private HGVRConfigurator _roomConfigurator;
         private QuirkyTech _quirkyTech;
+        public static bool QuirkyTechStatus = false;
         public UI(ControlSystem cs, InquiryRequest inquiryRequest)
         {
             _inquiryRequest = inquiryRequest;

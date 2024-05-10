@@ -111,7 +111,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             try
             {
                 // var manifestUrl = $"http://{_manifestIpAddress}:{_manifestPort}/{_manifestStoresFile}";
-                var manifestUrl = $"http://gui.abscraft.ca:{_manifestPort}/{file}";
+                // var manifestUrl = $"http://gui.abscraft.ca:{_manifestPort}/{file}";
+                var manifestUrl = $"http://{_manifestIpAddress}:{_manifestPort}/{file}";
                 var manifestClientRequest = new HttpClientRequest
                 {
                     RequestType = RequestType.Get,
