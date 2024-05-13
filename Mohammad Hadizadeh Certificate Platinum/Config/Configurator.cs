@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharpPro;
 using Crestron.SimplSharpPro.Media;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
 
@@ -136,7 +138,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         {
                             if (ValidateManifestStore(_manifestResponse.ContentString))
                             {
-                                Stores = JArray.Parse(_manifestResponse.ContentString).ToObject<Store[]>();
+                                Stores = JArray.Parse(Encoding.UTF8.GetString(_manifestResponse.ContentBytes)).ToObject<Store[]>();
 
                                 ControlSystem.StoreFronts = new StoreFronts(Stores.Count(s => s.IS_STOREFRONT));
                                 ControlSystem.WorkSpaces = new WorkSpaces(Stores.Count(s => !s.IS_STOREFRONT));
@@ -153,7 +155,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                         ControlSystem.SpaceId = store.SPACE_ID;
                                         ControlSystem.SpaceDecor = store.SPACE_DECOR;
                                         ControlSystem.NumOfStoresAvailable = Stores.Count(s => s.IS_STOREFRONT);
-                                        ControlSystem.NumOfStoresOpen = Stores.Count(s => s.OPEN);
+                                        ControlSystem.NumOfStoresOpen = Stores.Count(s => s.IS_STOREFRONT && s.OPEN);
                                     }
 
                                     if (store.IS_STOREFRONT)

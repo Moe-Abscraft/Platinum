@@ -20,63 +20,63 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             _server.ReceivedRequestEvent += _server_ReceivedRequestEvent;
             _server.HttpRequestHandler = new DefaultHttpCwsRequestHandler();
 
-            HttpCwsRoute route_1 = new HttpCwsRoute("member_inquiry")
+            HttpCwsRoute route1 = new HttpCwsRoute("member_inquiry")
             {
                 Name = "member_inquiry",
                 RouteHandler = new MemberInquiryHandler()
             };
-            _server.Routes.Add(route_1);
+            _server.Routes.Add(route1);
 
-            HttpCwsRoute route_2 = new HttpCwsRoute("store_status")
+            HttpCwsRoute route2 = new HttpCwsRoute("store_status")
             {
                 Name = "store_status",
                 RouteHandler = new StoreStatusHandler()
             };
-            _server.Routes.Add(route_2);
+            _server.Routes.Add(route2);
 
-            HttpCwsRoute route_3 = new HttpCwsRoute("workspace_status")
+            HttpCwsRoute route3 = new HttpCwsRoute("workspace_status")
             {
                 Name = "workspace_status",
                 RouteHandler = new WorkspaceStatusHandler()
             };
-            _server.Routes.Add(route_3);
+            _server.Routes.Add(route3);
 
-            HttpCwsRoute route_4 = new HttpCwsRoute("queue_status")
+            HttpCwsRoute route4 = new HttpCwsRoute("queue_status")
             {
                 Name = "queue_status",
                 RouteHandler = new QueueStatusHandler()
             };
-            _server.Routes.Add(route_4);
+            _server.Routes.Add(route4);
 
-            HttpCwsRoute route_5 = new HttpCwsRoute("wall_status")
+            HttpCwsRoute route5 = new HttpCwsRoute("wall_status")
             {
                 Name = "wall_status",
                 RouteHandler = new WallStatusHandler()
             };
-            _server.Routes.Add(route_5);
+            _server.Routes.Add(route5);
 
-            HttpCwsRoute route_6 = new HttpCwsRoute("quirkyTech_status")
+            HttpCwsRoute route6 = new HttpCwsRoute("quirkyTech_status")
             {
                 Name = "quirkyTech_status",
                 RouteHandler = new QuirkyTechHandler()
             };
-            _server.Routes.Add(route_6);
+            _server.Routes.Add(route6);
             
-            HttpCwsRoute route_7 = new HttpCwsRoute("storeId_inquiry")
+            HttpCwsRoute route7 = new HttpCwsRoute("storeId_inquiry")
             {
                 Name = "storeId_inquiry",
                 RouteHandler = new StoreIdInquiryHandler()
             };
-            _server.Routes.Add(route_7);
+            _server.Routes.Add(route7);
 
             _server.Register();
         }
 
         private static void _server_ReceivedRequestEvent(object sender, HttpCwsRequestEventArgs args)
         {
-            // CrestronConsole.PrintLine("Received Request");
-            // CrestronConsole.PrintLine(args.Context.Request.HttpMethod);
-            // CrestronConsole.PrintLine(args.Context.Request.RouteData.Route.Name);
+            CrestronConsole.PrintLine("Received Request");
+            CrestronConsole.PrintLine(args.Context.Request.HttpMethod);
+            CrestronConsole.PrintLine(args.Context.Request.RouteData.Route.Name);
         }
     }
 
@@ -255,17 +255,18 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         }
     }
 
-    public class StoreStatusHandler : IHttpCwsHandler
+    public sealed class StoreStatusHandler : IHttpCwsHandler
     {
         public static event EventHandler<Space> SpaceStatusChangedEvent = delegate { };
 
-        protected virtual void OnSpaceStatusChangedEvent(Space e)
+        private void OnSpaceStatusChangedEvent(Space e)
         {
             SpaceStatusChangedEvent?.Invoke(this, e);
         }
 
         public void ProcessRequest(HttpCwsContext context)
         {
+            CrestronConsole.PrintLine($"Processing Store Status Request: {context.Request.HttpMethod}");
             if (context.Request.HttpMethod == "POST")
             {
                 if (context.Request.RouteData.Route.Name == "store_status")
@@ -275,14 +276,14 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         try
                         {
                             var data = sr.ReadToEnd();
-                            CrestronConsole.PrintLine(data);
+                            CrestronConsole.PrintLine("Store Status Data: " + data);
                             var storeStatus = JsonConvert.DeserializeObject<StoreFront>(data);
                             OnSpaceStatusChangedEvent(storeStatus);
                             //ControlSystem.StoreFronts[storeStatus.SpaceId] = storeStatus;
                         }
                         catch (Exception e)
                         {
-                            CrestronConsole.PrintLine(e.Message);
+                            CrestronConsole.PrintLine($"Error in StoreStatusHandler: {e.Message}");
                         }
                     }
 
@@ -297,7 +298,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     }
                     catch (Exception e)
                     {
-                        CrestronConsole.PrintLine(e.Message);
+                        CrestronConsole.PrintLine($"Error in StoreStatusHandler POST Response: {e.Message}");
                     }
                 }
             }
@@ -317,7 +318,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     }
                     catch (Exception e)
                     {
-                        CrestronConsole.PrintLine(e.Message);
+                        CrestronConsole.PrintLine($"Error in StoreStatusHandler GET Response: {e.Message}");
                     }
                 }
             }
@@ -506,12 +507,13 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 using (_client = new HttpClient())
                 {
                     _request.Url = new UrlParser("http://" + host + "/cws/api/store_status");
-                    _request.Header.ContentType = "application/json";
+                    _request.Header.ContentType = "text/plain";
                     _request.RequestType = RequestType.Get;
-                    _request.ContentString = storeFront.SpaceId;
+                    //_request.ContentString = storeFront.SpaceId;
 
                     using (var response = _client.Dispatch(_request))
                     {
+                        CrestronConsole.PrintLine("Response from GET Store Status Request" + response.ContentString);
                         var status = JsonConvert.DeserializeObject<StoreFront>(response.ContentString);
                         return status;
                     }
@@ -519,7 +521,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             }
             catch (Exception e)
             {
-                CrestronConsole.PrintLine(e.Message);
+                CrestronConsole.PrintLine($"Error in GetStoreStatusRequest: {e.Message}");
                 return null;
             }
         }
