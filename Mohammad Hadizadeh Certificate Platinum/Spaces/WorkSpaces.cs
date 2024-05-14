@@ -49,6 +49,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         [JsonIgnore]
         public CrestronQueue<string> StorefrontQueue;
+        public string AssignedStoreFrontId { get; set; }
         public float Area { get; set; }
         public override ushort GetModeColor()
         {
@@ -60,29 +61,30 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 case SpaceMode.Available:
                     return 0;
                 case SpaceMode.Occupied:
-                    return GetOccupiedColor(SpaceId);
+                    // return GetOccupiedColor(SpaceId);
+                    return StoreFront.GetOccupiedColor(AssignedStoreFrontId);
                 case SpaceMode.Closed:
                     return 1;
                 default:
                     return 0;
             }
         }
-        
-        public static ushort GetOccupiedColor(string spaceId)
+
+        private static ushort GetOccupiedColor(string spaceId)
         {
             switch (spaceId)
             {
-                case "A":
+                case "1":
                     return 2;
-                case "B":
+                case "2":
                     return 3;
-                case "C":
+                case "3":
                     return 5;
-                case "D":
+                case "4":
                     return 6;
-                case "E":
+                case "5":
                     return 7;
-                case "F":
+                case "6":
                     return 8;
                 default:
                     return 0;

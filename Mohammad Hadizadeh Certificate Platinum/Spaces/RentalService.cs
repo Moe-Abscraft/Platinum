@@ -30,6 +30,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         space.SpaceMode = SpaceMode.Available;
                         space.MemberName = "";
                         space.MemberId = "";
+                        space.AssignedStoreFrontId = "";
                         
                         storeFront.Area -= space.Area;
                         CrestronConsole.PrintLine($"New Area: {storeFront.Area}");
@@ -109,6 +110,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             workSpace.SpaceMode = SpaceMode.Occupied;
             workSpace.MemberName = storeFront.MemberName;
             workSpace.MemberId = storeFront.MemberId;
+            workSpace.AssignedStoreFrontId = storeFront.SpaceId;
                     
             storeFront.AssignedWorkSpaces.Add(workSpace);
             storeFront.Area += workSpace.Area;
@@ -139,12 +141,12 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 .ToList();
             HGVRConfigurator.OpenWalls(wallsToOpen.ToArray());
             HGVRConfigurator.TurnOnFans(fansToTurnOn.ToArray());
-
-            inquiryRequest.UpdateWorkspaceStatusRequest(ControlSystem.IpAddress, workSpace);
+            
             foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
             {
                 inquiryRequest.UpdateWorkspaceStatusRequest(storesIpAddress.ToString(), workSpace);
             }
+            inquiryRequest.UpdateWorkspaceStatusRequest(ControlSystem.IpAddress, workSpace);
         }
 
         public static void WorkspaceStorefrontQueue(WorkSpace workSpace, StoreFront storeFront, InquiryRequest inquiryRequest)

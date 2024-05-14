@@ -110,6 +110,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             workSpace.SpaceMode = args.MemberId == CardReader.MemberId ? SpaceMode.MySpace : args.SpaceMode;
             workSpace.MemberId = args.MemberId;
             workSpace.MemberName = args.MemberName;
+            workSpace.AssignedStoreFrontId = ((WorkSpace)args).AssignedStoreFrontId;
             
             CrestronConsole.PrintLine($"Workspace Mode: {ControlSystem.WorkSpaces[args.SpaceId].SpaceMode}");
             
@@ -275,13 +276,14 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].SpaceMode = SpaceMode.Occupied;
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberId = CardReader.MemberId;
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberName = CardReader.MemberName;
-                    _inquiryRequest.UpdateStoreStatusRequest(ControlSystem.IpAddress,
-                        ControlSystem.StoreFronts[ControlSystem.SpaceId]);
+                    
                     foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
                     {
                         _inquiryRequest.UpdateStoreStatusRequest(storesIpAddress.ToString(),
                             ControlSystem.StoreFronts[ControlSystem.SpaceId]);
                     }
+                    _inquiryRequest.UpdateStoreStatusRequest(ControlSystem.IpAddress,
+                        ControlSystem.StoreFronts[ControlSystem.SpaceId]);
                     
                     // Start Fans in Store
                     HGVRConfigurator.TurnOnFans(ControlSystem.MyStore.Fans);
