@@ -50,7 +50,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         public float Area { get; set; }
         public override ushort GetModeColor()
         {
-            CrestronConsole.PrintLine($"Getting storefront color for {SpaceMode}");
+            // CrestronConsole.PrintLine($"Getting storefront color for {SpaceMode}");
             switch (SpaceMode)
             {
                 case SpaceMode.MySpace:

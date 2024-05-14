@@ -43,9 +43,9 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
             foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
             {
-                CrestronConsole.PrintLine($"Checking the member login at: {storesIpAddress}");
+                // CrestronConsole.PrintLine($"Checking the member login at: {storesIpAddress}");
                 var memberInquiry = new InquiryRequest().GetMemberInquiryRequest(storesIpAddress.ToString());
-                CrestronConsole.PrintLine($"Member Inquiry: {memberInquiry}");
+                // CrestronConsole.PrintLine($"Member Inquiry: {memberInquiry}");
                 
                 _memberAlreadyLoggedIn = MemberId == memberInquiry;
                 if(_memberAlreadyLoggedIn) break;

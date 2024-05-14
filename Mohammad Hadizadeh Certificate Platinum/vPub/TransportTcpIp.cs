@@ -200,7 +200,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     if (temp.Length > 0)
                     {
                         TransmitData(temp);
-                        CrestronConsole.PrintLine($"Transmitting: {Address} ::: {temp.Trim('\x0D')}");
+                        // CrestronConsole.PrintLine($"Transmitting: {Address} ::: {temp.Trim('\x0D')}");
                     }
                 }
                 catch (Exception e)

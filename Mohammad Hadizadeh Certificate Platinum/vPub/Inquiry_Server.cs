@@ -74,9 +74,9 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         private static void _server_ReceivedRequestEvent(object sender, HttpCwsRequestEventArgs args)
         {
-            CrestronConsole.PrintLine("Received Request");
-            CrestronConsole.PrintLine(args.Context.Request.HttpMethod);
-            CrestronConsole.PrintLine(args.Context.Request.RouteData.Route.Name);
+            // CrestronConsole.PrintLine("Received Request");
+            // CrestronConsole.PrintLine(args.Context.Request.HttpMethod);
+            // CrestronConsole.PrintLine(args.Context.Request.RouteData.Route.Name);
         }
     }
 
@@ -89,7 +89,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 using (var sr = new StreamReader(context.Request.InputStream))
                 {
                     var data = sr.ReadToEnd();
-                    CrestronConsole.PrintLine(data);
+                    // CrestronConsole.PrintLine(data);
                 }
 
                 if (context.Request.RouteData.Route.Name == "member_inquiry")
@@ -130,7 +130,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         try
                         {
                             var data = sr.ReadToEnd();
-                            CrestronConsole.PrintLine($"Request: Adding space {data} to the queue");
+                            // CrestronConsole.PrintLine($"Request: Adding space {data} to the queue");
                             // data= "workspace","storefront"
                             var queuedata = data.Split(',');
                             var workSpace = ControlSystem.WorkSpaces[queuedata[0]];
@@ -266,7 +266,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         public void ProcessRequest(HttpCwsContext context)
         {
-            CrestronConsole.PrintLine($"Processing Store Status Request: {context.Request.HttpMethod}");
+            // CrestronConsole.PrintLine($"Processing Store Status Request: {context.Request.HttpMethod}");
             if (context.Request.HttpMethod == "POST")
             {
                 if (context.Request.RouteData.Route.Name == "store_status")
@@ -276,7 +276,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         try
                         {
                             var data = sr.ReadToEnd();
-                            CrestronConsole.PrintLine("Store Status Data: " + data);
+                            // CrestronConsole.PrintLine("Store Status Data: " + data);
                             var storeStatus = JsonConvert.DeserializeObject<StoreFront>(data);
                             OnSpaceStatusChangedEvent(storeStatus);
                             //ControlSystem.StoreFronts[storeStatus.SpaceId] = storeStatus;
@@ -345,7 +345,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         try
                         {
                             var data = sr.ReadToEnd();
-                            CrestronConsole.PrintLine(data);
+                            // CrestronConsole.PrintLine(data);
                             var storeStatus = JsonConvert.DeserializeObject<WorkSpace>(data);
                             OnWorkspaceStatusChangedEvent(storeStatus);
                             //ControlSystem.StoreFronts[storeStatus.SpaceId] = storeStatus;
@@ -405,11 +405,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             if (context.Request.HttpMethod == "GET")
             {
-                using (var sr = new StreamReader(context.Request.InputStream))
-                {
-                    var data = sr.ReadToEnd();
-                    CrestronConsole.PrintLine(data);
-                }
+                // using (var sr = new StreamReader(context.Request.InputStream))
+                // {
+                //     var data = sr.ReadToEnd();
+                //     CrestronConsole.PrintLine(data);
+                // }
 
                 if (context.Request.RouteData.Route.Name == "storeId_inquiry")
                 {
@@ -444,10 +444,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
     {
         private HttpClient _client;
 
-        HttpClientRequest _request = new HttpClientRequest()
-        {
-            KeepAlive = false
-        };
+        private HttpClientRequest _request;
 
         public string GetMemberInquiryRequest(string host)
         {
@@ -456,6 +453,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 InquiryResponseModel responseModel;
                 using (_client = new HttpClient())
                 {
+                    _request = new HttpClientRequest()
+                    {
+                        KeepAlive = false
+                    };
                     _request.Url = new UrlParser("http://" + host + "/cws/api/member_inquiry");
                     _request.Header.ContentType = "application/json";
                     _request.RequestType = RequestType.Get;
@@ -463,7 +464,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     using (var response = _client.Dispatch(_request))
                     {
                         responseModel = JsonConvert.DeserializeObject<InquiryResponseModel>(response.ContentString);
-                        CrestronConsole.PrintLine(responseModel.MemberId);
+                        //CrestronConsole.PrintLine(responseModel.MemberId);
                     }
                 }
 
@@ -474,6 +475,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 CrestronConsole.PrintLine(e.Message);
                 return "";
             }
+            finally
+            {
+                _client.Dispose();
+                _request = null;
+            }
         }
 
         public void UpdateStoreStatusRequest(string host, StoreFront storeFront)
@@ -482,6 +488,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             {
                 using (_client = new HttpClient())
                 {
+                    _request = new HttpClientRequest()
+                    {
+                        KeepAlive = false
+                    };
                     _request.Url = new UrlParser("http://" + host + "/cws/api/store_status");
                     _request.Header.ContentType = "application/json";
                     _request.RequestType = RequestType.Post;
@@ -490,13 +500,18 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                     using (var response = _client.Dispatch(_request))
                     {
-                        CrestronConsole.PrintLine(response.ContentString);
+                        //CrestronConsole.PrintLine(response.ContentString);
                     }
                 }
             }
             catch (Exception e)
             {
                 CrestronConsole.PrintLine(e.Message);
+            }
+            finally
+            {
+                _client.Dispose();
+                _request = null;
             }
         }
 
@@ -506,6 +521,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             {
                 using (_client = new HttpClient())
                 {
+                    _request = new HttpClientRequest()
+                    {
+                        KeepAlive = false
+                    };
                     _request.Url = new UrlParser("http://" + host + "/cws/api/store_status");
                     _request.Header.ContentType = "text/plain";
                     _request.RequestType = RequestType.Get;
@@ -513,7 +532,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                     using (var response = _client.Dispatch(_request))
                     {
-                        CrestronConsole.PrintLine("Response from GET Store Status Request" + response.ContentString);
+                        //CrestronConsole.PrintLine("Response from GET Store Status Request" + response.ContentString);
                         var status = JsonConvert.DeserializeObject<StoreFront>(response.ContentString);
                         return status;
                     }
@@ -524,6 +543,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 CrestronConsole.PrintLine($"Error in GetStoreStatusRequest: {e.Message}");
                 return null;
             }
+            finally
+            {
+                _client.Dispose();
+                _request = null;
+            }
         }
 
         public List<WorkSpace> GetWorkSpaces(string host)
@@ -532,6 +556,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             {
                 using (_client = new HttpClient())
                 {
+                    _request = new HttpClientRequest()
+                    {
+                        KeepAlive = false
+                    };
                     _request.Url = new UrlParser("http://" + host + "/cws/api/workspace_status");
                     _request.Header.ContentType = "application/json";
                     _request.RequestType = RequestType.Get;
@@ -548,6 +576,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 CrestronConsole.PrintLine(e.Message);
                 return null;
             }
+            finally
+            {
+                _client.Dispose();
+                _request = null;
+            }
         }
 
         public void UpdateWorkspaceStatusRequest(string host, WorkSpace workSpace)
@@ -556,6 +589,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             {
                 using (_client = new HttpClient())
                 {
+                    _request = new HttpClientRequest()
+                    {
+                        KeepAlive = false
+                    };
                     _request.Url = new UrlParser("http://" + host + "/cws/api/workspace_status");
                     _request.Header.ContentType = "application/json";
                     _request.RequestType = RequestType.Post;
@@ -564,13 +601,18 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                     using (var response = _client.Dispatch(_request))
                     {
-                        CrestronConsole.PrintLine(response.ContentString);
+                        //CrestronConsole.PrintLine(response.ContentString);
                     }
                 }
             }
             catch (Exception e)
             {
                 CrestronConsole.PrintLine(e.Message);
+            }
+            finally
+            {
+                _client.Dispose();
+                _request = null;
             }
         }
 
@@ -580,6 +622,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             {
                 using (_client = new HttpClient())
                 {
+                    _request = new HttpClientRequest()
+                    {
+                        KeepAlive = false
+                    };
                     _request.Url = new UrlParser("http://" + host + "/cws/api/queue_status");
                     _request.Header.ContentType = "application/json";
                     _request.RequestType = RequestType.Post;
@@ -588,13 +634,18 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                     using (var response = _client.Dispatch(_request))
                     {
-                        CrestronConsole.PrintLine(response.ContentString);
+                        //CrestronConsole.PrintLine(response.ContentString);
                     }
                 }
             }
             catch (Exception e)
             {
                 CrestronConsole.PrintLine(e.Message);
+            }
+            finally
+            {
+                _client.Dispose();
+                _request = null;
             }
         }
 
@@ -605,6 +656,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             {
                 using (_client = new HttpClient())
                 {
+                    _request = new HttpClientRequest()
+                    {
+                        KeepAlive = false
+                    };
                     _request.Url = new UrlParser("http://" + host + "/cws/api/wall_status");
                     _request.Header.ContentType = "application/json";
                     _request.RequestType = RequestType.Post;
@@ -619,13 +674,18 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                     using (var response = _client.Dispatch(_request))
                     {
-                        CrestronConsole.PrintLine(response.ContentString);
+                        //CrestronConsole.PrintLine(response.ContentString);
                     }
                 }
             }
             catch (Exception e)
             {
                 CrestronConsole.PrintLine(e.Message);
+            }
+            finally
+            {
+                _client.Dispose();
+                _request = null;
             }
         }
         
@@ -633,17 +693,22 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             try
             {
-                StoreIdInquiryResponseModel responseModel;
+                StoreIdInquiryResponseModel responseModel = new StoreIdInquiryResponseModel() { StoreId = "UNKNOWN" };
                 using (_client = new HttpClient())
                 {
+                    _request = new HttpClientRequest()
+                    {
+                        KeepAlive = false
+                    };
                     _request.Url = new UrlParser("http://" + host + "/cws/api/storeId_inquiry");
                     _request.Header.ContentType = "application/json";
                     _request.RequestType = RequestType.Get;
 
                     using (var response = _client.Dispatch(_request))
                     {
-                        responseModel = JsonConvert.DeserializeObject<StoreIdInquiryResponseModel>(response.ContentString);
-                        CrestronConsole.PrintLine(responseModel.StoreId);
+                        responseModel =
+                            JsonConvert.DeserializeObject<StoreIdInquiryResponseModel>(response.ContentString);
+                        // CrestronConsole.PrintLine(responseModel.StoreId);
                     }
                 }
 
@@ -651,8 +716,13 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             }
             catch (Exception e)
             {
-                CrestronConsole.PrintLine(e.Message);
+                CrestronConsole.PrintLine("Error in Get Store Id Inquiry: " + e.Message);
                 return "";
+            }
+            finally
+            {
+                _client.Dispose();
+                _request = null;
             }
         }
     }

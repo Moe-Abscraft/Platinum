@@ -190,8 +190,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             if(ControlSystem.StoreFronts[spaceId] == null && ControlSystem.WorkSpaces[spaceId] == null) return;
 
-            CrestronConsole.PrintLine(
-                $"Setting Store Mode for Space {spaceId}");
+            // CrestronConsole.PrintLine(
+            //     $"Setting Store Mode for Space {spaceId}");
 
             switch (spaceId)
             {

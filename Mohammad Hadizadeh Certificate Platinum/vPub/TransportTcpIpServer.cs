@@ -25,12 +25,12 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             _server = new TCPServer("0.0.0.0", 8000, 65535, EthernetAdapterType.EthernetLANAdapter);
             _server.SocketStatusChange += ServerOnSocketStatusChange;
             SocketErrorCodes err = _server.WaitForConnectionAsync(ServerConnectedCallback);
-            CrestronConsole.PrintLine($"Socket Error: {err.ToString()}");
+            // CrestronConsole.PrintLine($"Socket Error: {err.ToString()}");
         }
 
         private void ServerConnectedCallback(TCPServer mytcpserver, uint clientindex)
         {
-            CrestronConsole.PrintLine($"Client connected:{clientindex}");
+            // CrestronConsole.PrintLine($"Client connected:{clientindex}");
             if (clientindex != 0)
             {
                 _server.ReceiveDataAsync(clientindex, ServerReceiveDataCallback);
@@ -55,7 +55,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         private void ServerDataSentCallback(TCPServer mytcpserver, uint clientindex, int numberofbytessent)
         {
-            CrestronConsole.PrintLine($"Data sent:{numberofbytessent} bytes");
+            // CrestronConsole.PrintLine($"Data sent:{numberofbytessent} bytes");
         }
 
         private void ServerOnSocketStatusChange(TCPServer mytcpserver, uint clientindex, SocketStatus serversocketstatus)
