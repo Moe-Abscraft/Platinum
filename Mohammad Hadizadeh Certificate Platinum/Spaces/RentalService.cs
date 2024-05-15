@@ -172,8 +172,12 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             var storeFront = ControlSystem.StoreFronts[ControlSystem.MyStore.SPACE_ID];
             var area = storeFront.Area;
             var totalTime = stopwatch.Elapsed.Hours * 60 + stopwatch.Elapsed.Minutes;
-            var totalCharge = area * ControlSystem.Rate * totalTime;
+            if (totalTime == 0) return 0;
+            totalTime = 1;
+            var totalCharge = area * ControlSystem.Rate / 60 * totalTime;
             TotalCharge += totalCharge;
+            CrestronConsole.PrintLine($"Area: {area} Rate: {ControlSystem.Rate} Time: {totalTime} Charge: {totalCharge} Total Charge: {TotalCharge}");
+            TotalCharge = (float)System.Math.Round(TotalCharge, 2);
             return TotalCharge;
         }
     }

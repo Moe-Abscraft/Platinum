@@ -139,13 +139,15 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             CrestronConsole.PrintLine(
                 $"Member ID: {args.MemberId} Member Name: {args.MemberName} My Member ID: {CardReader.MemberId}");
 
+            var area = ControlSystem.StoreFronts[args.SpaceId].Area;
             ControlSystem.StoreFronts[args.SpaceId] = null;
             ControlSystem.StoreFronts[args.SpaceId] = new StoreFront()
             {
                 SpaceId = args.SpaceId,
                 SpaceMode = args.MemberId == CardReader.MemberId ? SpaceMode.MySpace : args.SpaceMode,
                 MemberId = args.MemberId,
-                MemberName = args.MemberName
+                MemberName = args.MemberName,
+                Area = area
             };
 
             CrestronConsole.PrintLine($"Space Mode: {ControlSystem.StoreFronts[args.SpaceId].SpaceMode}");
@@ -493,8 +495,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     _loginTimer.Elapsed.Seconds.ToString("00");
                 if (_loginTimer.Elapsed.Seconds == 0)
                 {
-                    Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.TotalCharge].StringValue = RentalService
-                        .GetTotalCharge(_loginTimer).ToString(CultureInfo.InvariantCulture);
+                    CrestronConsole.PrintLine($"Login Timer: {_loginTimer.Elapsed.Minutes} minutes - Calculating Charges...");
+                    var newCharge = RentalService.GetTotalCharge(_loginTimer);
+                    Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.TotalCharge].StringValue = newCharge.ToString(CultureInfo.InvariantCulture);
+                    CrestronConsole.PrintLine($"Charge: {newCharge}");
                 }
 
                 Thread.Sleep(1000);
