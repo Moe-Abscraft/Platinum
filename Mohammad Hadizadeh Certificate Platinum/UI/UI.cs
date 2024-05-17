@@ -316,7 +316,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         }
 
                         _inquiryRequest.UpdateStoreStatusRequest(ControlSystem.IpAddress,
-                            ControlSystem.StoreFronts[ControlSystem.SpaceId]);
+                             ControlSystem.StoreFronts[ControlSystem.SpaceId]);
 
                         // Start Fans in Store
                         HGVRConfigurator.TurnOnFans(ControlSystem.MyStore.Fans);
@@ -361,20 +361,23 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberName = "";
 
                     // Update status of the assigned workspaces to available
-                    foreach (var space in ControlSystem.StoreFronts[ControlSystem.SpaceId].AssignedWorkSpaces)
+                    if (ControlSystem.StoreFronts[ControlSystem.SpaceId].AssignedWorkSpaces != null)
                     {
-                        space.SpaceMode = SpaceMode.Available;
-                        space.MemberName = "";
-                        space.MemberId = "";
-
-                        _inquiryRequest.UpdateWorkspaceStatusRequest(ControlSystem.IpAddress, space);
-                        foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
+                        foreach (var space in ControlSystem.StoreFronts[ControlSystem.SpaceId].AssignedWorkSpaces)
                         {
-                            _inquiryRequest.UpdateWorkspaceStatusRequest(storesIpAddress.ToString(), space);
+                            space.SpaceMode = SpaceMode.Available;
+                            space.MemberName = "";
+                            space.MemberId = "";
+
+                            _inquiryRequest.UpdateWorkspaceStatusRequest(ControlSystem.IpAddress, space);
+                            foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
+                            {
+                                _inquiryRequest.UpdateWorkspaceStatusRequest(storesIpAddress.ToString(), space);
+                            }
                         }
                     }
-
-                    // Start Fans in Store
+                    
+                    // Stop Fans in Store
                     HGVRConfigurator.TurnOffFans(ControlSystem.MyStore.Fans);
                     HGVRConfigurator.CloseWalls(ControlSystem.MyStore.Walls);
 

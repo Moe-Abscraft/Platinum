@@ -496,6 +496,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     _request.Header.ContentType = "application/json";
                     _request.RequestType = RequestType.Post;
 
+                    if (storeFront.SpaceMode == SpaceMode.MySpace)
+                        storeFront.SpaceId = SpaceMode.Occupied.ToString();
                     _request.ContentString = JsonConvert.SerializeObject(storeFront);
 
                     using (var response = _client.Dispatch(_request))
