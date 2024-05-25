@@ -163,7 +163,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                         ControlSystem.StoreFronts[store.SPACE_ID] = new StoreFront()
                                         {
                                             SpaceId = store.SPACE_ID, 
-                                            SpaceMode = SpaceMode.Closed,
+                                            SpaceMode = store.OPEN ? SpaceMode.Available : SpaceMode.Closed,
                                             MemberName = "",
                                             MemberId = "",
                                             Area = float.Parse(store.AREA)

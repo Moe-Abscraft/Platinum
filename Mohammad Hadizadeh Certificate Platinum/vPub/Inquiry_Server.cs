@@ -76,7 +76,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             // CrestronConsole.PrintLine("Received Request");
             // CrestronConsole.PrintLine(args.Context.Request.HttpMethod);
-            // CrestronConsole.PrintLine(args.Context.Request.RouteData.Route.Name);
+            CrestronConsole.PrintLine(args.Context.Request.RouteData.Route.Name);
         }
     }
 
@@ -135,7 +135,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                             var queuedata = data.Split(',');
                             var workSpace = ControlSystem.WorkSpaces[queuedata[0]];
                             var storeFront = ControlSystem.StoreFronts[queuedata[1]];
-                            RentalService.WorkspaceStorefrontQueue(workSpace, storeFront, null);
+                            var action = queuedata[2];
+                            RentalService.WorkspaceStorefrontQueue(workSpace, storeFront, null, action);
                         }
                         catch (Exception e)
                         {
@@ -534,7 +535,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                     using (var response = _client.Dispatch(_request))
                     {
-                        //CrestronConsole.PrintLine("Response from GET Store Status Request" + response.ContentString);
+                        // CrestronConsole.PrintLine("Response from GET Store Status Request" + response.ContentString);
                         var status = JsonConvert.DeserializeObject<StoreFront>(response.ContentString);
                         return status;
                     }
@@ -618,7 +619,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             }
         }
 
-        public void UpdateQueueStatusRequest(string host, WorkSpace workSpace, StoreFront storeFront)
+        public void UpdateQueueStatusRequest(string host, WorkSpace workSpace, StoreFront storeFront, string action)
         {
             try
             {
@@ -632,7 +633,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     _request.Header.ContentType = "application/json";
                     _request.RequestType = RequestType.Post;
 
-                    _request.ContentString = workSpace.SpaceId + "," + storeFront.SpaceId;
+                    _request.ContentString = workSpace.SpaceId + "," + storeFront.SpaceId + "," + action;
 
                     using (var response = _client.Dispatch(_request))
                     {

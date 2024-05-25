@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.CrestronThread;
-using Independentsoft.Exchange;
 
 namespace Mohammad_Hadizadeh_Certificate_Platinum
 {
@@ -10,21 +9,24 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         private static TransportTcpIp _client;
         private static CrestronQueue<string> _dataTxQueue;
         private static CEvent _dataTxEvent;
-        private static bool _dataTxRunning = false;
+        //private static bool _dataTxRunning = false;
+        
+        private static Thread _sendDataThread;
 
         public QuirkyTech()
         {
             _client = new TransportTcpIp(Configurator.OrderIpAddress, Configurator.OrderPort, 1);
             _client.DataReceived += ClientOnDataReceived;
             _dataTxQueue = new CrestronQueue<string>(100);
-            _dataTxEvent = new CEvent(false, false);
+            _dataTxEvent = new CEvent();
             
-            CrestronInvoke.BeginInvoke(SendData, null);
+            _sendDataThread = new Thread(StartSendData, null);
+            //CrestronInvoke.BeginInvoke(SendData, null);
         }
 
         private void ClientOnDataReceived(object sender, MessageEventArgs e)
         {
-            _dataTxEvent.Set();
+            // _dataTxEvent.Set();
         }
         
         public static void SendOrder(List<Retail> order)
@@ -35,19 +37,18 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 _dataTxQueue.Enqueue(orderString);
             }
 
-            if (_dataTxRunning) return;
             _dataTxEvent.Set();
-            _dataTxRunning = true;
         }
         
         public static void StartRentalService(string spaceId)
         {
+            if(_sendDataThread.ThreadState != Thread.eThreadStates.ThreadRunning)
+                _sendDataThread.Start();
+                
             var rentalService = $"rent open member {CardReader.MemberId} spaces {spaceId}\r\n";
             _dataTxQueue.Enqueue(rentalService);
             
-            if (_dataTxRunning) return;
             _dataTxEvent.Set();
-            _dataTxRunning = true;
         }
         
         public static void EndRentalService(string spaceId)
@@ -55,9 +56,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             var rentalService = $"rent close member {CardReader.MemberId} spaces {spaceId}\r\n";
             _dataTxQueue.Enqueue(rentalService);
             
-            if (_dataTxRunning) return;
             _dataTxEvent.Set();
-            _dataTxRunning = true;
         }
 
         public static void SetDigitalSignageMessage(string spaceId, string message)
@@ -65,9 +64,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             var digitalSignageService = $"display +{spaceId.ToLower()} \"{spaceId}\"\r\n";
             _dataTxQueue.Enqueue(digitalSignageService);
             
-            if (_dataTxRunning) return;
             _dataTxEvent.Set();
-            _dataTxRunning = true;
         }
         
         public static void DeleteDigitalSignageMessage(string spaceId, string message)
@@ -75,9 +72,13 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             var digitalSignageService = $"display -{spaceId.ToLower()}\r\n";
             _dataTxQueue.Enqueue(digitalSignageService);
             
-            if (_dataTxRunning) return;
             _dataTxEvent.Set();
-            _dataTxRunning = true;
+        }
+        
+        private object StartSendData(object obj)
+        {
+            SendData(obj);
+            return 1;
         }
         
         private void SendData(object obj)
@@ -85,6 +86,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             while (true)
             {
                 _dataTxEvent.Wait();
+                CrestronConsole.PrintLine("---------------------------------- Data Tx Event Set");
                 if (_dataTxQueue.Count > 0)
                 {
                     var temp = _dataTxQueue.Dequeue();

@@ -100,7 +100,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 case SpaceMode.Available:
                     return "Press to ADD WorkSpace";
                 case SpaceMode.Occupied:
-                    return "Press to QUEUE WorkSpace";
+                    return !StorefrontQueue.Contains(ControlSystem.SpaceId) ? "Press to QUEUE WorkSpace" : "Press to REMOVE QUEUE WorkSpace";
                 case SpaceMode.Closed:
                     return "Closed";
                 default:

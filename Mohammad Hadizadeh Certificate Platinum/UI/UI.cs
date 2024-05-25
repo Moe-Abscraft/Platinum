@@ -244,6 +244,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     var storeFront = ControlSystem.StoreFronts[ControlSystem.SpaceId];
 
                     RentalService.RentSpace(storeFront, workspace, _inquiryRequest);
+                    UI_Actions.SetStoreMode(Tsw770, workspace.SpaceId);
                 });
             }
 
@@ -279,6 +280,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     }
                     CrestronConsole.PrintLine("VPubLoginAck");
                     CrestronConsole.PrintLine($"MembershipIsValid: {CardReader.MembershipIsValid}");
+
                     if (CardReader.MembershipIsValid)
                     {
                         Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.MessagePage].BoolValue = false;
@@ -317,7 +319,6 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                         _inquiryRequest.UpdateStoreStatusRequest(ControlSystem.IpAddress,
                              ControlSystem.StoreFronts[ControlSystem.SpaceId]);
-
                         // Start Fans in Store
                         HGVRConfigurator.TurnOnFans(ControlSystem.MyStore.Fans);
                         HGVRConfigurator.OpenWalls(ControlSystem.MyStore.Walls);
@@ -373,6 +374,22 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                             foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
                             {
                                 _inquiryRequest.UpdateWorkspaceStatusRequest(storesIpAddress.ToString(), space);
+                            }
+                        }
+                    }
+
+                    for (int i = 1; i <= 6; i++)
+                    {
+                        var workSpace = ControlSystem.WorkSpaces[i.ToString()];
+                        var storeFront = ControlSystem.StoreFronts[ControlSystem.SpaceId];
+                        if(workSpace != null)
+                        {
+                            if (workSpace.StorefrontQueue != null)
+                            {
+                                if (workSpace.StorefrontQueue.Contains(ControlSystem.SpaceId))
+                                {
+                                    RentalService.WorkspaceStorefrontQueue(workSpace, storeFront, _inquiryRequest, "remove");
+                                }
                             }
                         }
                     }

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro;
 using Crestron.SimplSharpPro.AudioDistribution;
+using Crestron.SimplSharpPro.DeviceSupport;
 using Mohammad_Hadizadeh_Certificate_Platinum.HGVR;
 
 namespace Mohammad_Hadizadeh_Certificate_Platinum
@@ -13,6 +14,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         public static float TotalCharge;
         public static void RentSpace(StoreFront storeFront, WorkSpace workSpace, InquiryRequest inquiryRequest)
         {
+            if(storeFront.MemberId == "")
+            {
+                CrestronConsole.PrintLine("Member is not logged in.");
+                return;
+            }
             if(storeFront.AssignedWorkSpaces == null) storeFront.AssignedWorkSpaces = new List<WorkSpace>();
             else
             {
@@ -101,7 +107,16 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             CrestronConsole.PrintLine(isAvailable ? "Workspace is Available" : "Workspace is not Available -- Adding to Queue");
             if (!isAvailable)
             {
-                WorkspaceStorefrontQueue(workSpace, storeFront, inquiryRequest);
+                if(workSpace.StorefrontQueue != null)
+                {
+                    if (workSpace.StorefrontQueue.Contains(storeFront.SpaceId))
+                    {
+                        CrestronConsole.PrintLine($"Space {storeFront.SpaceId} already is in queue, removing from queue.");
+                        WorkspaceStorefrontQueue(workSpace, storeFront, inquiryRequest, "remove");
+                        return;
+                    }
+                }
+                WorkspaceStorefrontQueue(workSpace, storeFront, inquiryRequest, "add");
                 return;
             }
             
@@ -149,21 +164,56 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             inquiryRequest.UpdateWorkspaceStatusRequest(ControlSystem.IpAddress, workSpace);
         }
 
-        public static void WorkspaceStorefrontQueue(WorkSpace workSpace, StoreFront storeFront, InquiryRequest inquiryRequest)
+        public static void WorkspaceStorefrontQueue(WorkSpace workSpace, StoreFront storeFront, InquiryRequest inquiryRequest, string action)
         {
-            if (workSpace.StorefrontQueue == null) workSpace.StorefrontQueue = new CrestronQueue<string>();
-            if (workSpace.StorefrontQueue.Contains(storeFront.SpaceId))
+            if(action == "remove")
             {
-                CrestronConsole.PrintLine($"Space {storeFront.SpaceId} already is in queue");
-                return;
+                if (workSpace.StorefrontQueue == null) return;
+                if (!workSpace.StorefrontQueue.Contains(storeFront.SpaceId)) return;
+                
+                var newQueue = new CrestronQueue<string>();
+                foreach (var spaceId in workSpace.StorefrontQueue)
+                {
+                    if (spaceId == storeFront.SpaceId) continue;
+                    newQueue.Enqueue(spaceId);
+                }
+                workSpace.StorefrontQueue = newQueue;
+                
+                if(inquiryRequest == null) return;
+                inquiryRequest.UpdateQueueStatusRequest(ControlSystem.IpAddress, workSpace, storeFront, "remove");
+                foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
+                {
+                    inquiryRequest.UpdateQueueStatusRequest(storesIpAddress.ToString(), workSpace, storeFront, "remove");
+                }
             }
-            workSpace.StorefrontQueue.Enqueue(storeFront.SpaceId);
-            
-            if(inquiryRequest == null) return;
-            inquiryRequest.UpdateQueueStatusRequest(ControlSystem.IpAddress, workSpace, storeFront);
-            foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
+            else if (action == "add")
             {
-                inquiryRequest.UpdateQueueStatusRequest(storesIpAddress.ToString(), workSpace, storeFront);
+                if (workSpace.StorefrontQueue == null) workSpace.StorefrontQueue = new CrestronQueue<string>();
+                if (workSpace.StorefrontQueue.Contains(storeFront.SpaceId))
+                {
+                    CrestronConsole.PrintLine($"Space {storeFront.SpaceId} already is in queue");
+                    return;
+                }
+                workSpace.StorefrontQueue.Enqueue(storeFront.SpaceId);
+            
+                if(inquiryRequest == null) return;
+                inquiryRequest.UpdateQueueStatusRequest(ControlSystem.IpAddress, workSpace, storeFront, "add");
+                foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
+                {
+                    inquiryRequest.UpdateQueueStatusRequest(storesIpAddress.ToString(), workSpace, storeFront, "add");
+                }
+            }
+            else if (action == "remove_all")
+            {
+                workSpace.StorefrontQueue.Dispose();
+                workSpace.StorefrontQueue = null;
+                workSpace.StorefrontQueue = new CrestronQueue<string>();
+                
+                inquiryRequest.UpdateQueueStatusRequest(ControlSystem.IpAddress, workSpace, storeFront, "remove_all");
+                foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
+                {
+                    inquiryRequest.UpdateQueueStatusRequest(storesIpAddress.ToString(), workSpace, storeFront, "remove_all");
+                }
             }
         }
 
