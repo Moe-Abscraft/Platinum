@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.CrestronThread;
 
@@ -26,14 +27,14 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         private void ClientOnDataReceived(object sender, MessageEventArgs e)
         {
-            // _dataTxEvent.Set();
+            CrestronConsole.PrintLine($"QuirkyTech Data received: {e.Message}");
         }
         
         public static void SendOrder(List<Retail> order)
         {
             foreach (var item in order)
             {
-                var orderString = $"get item member {CardReader.MemberId} code {item.UPC}\r\n";
+                var orderString = $"get item member {CardReader.MemberId} code {item.UPC}\x0D\x0A";
                 _dataTxQueue.Enqueue(orderString);
             }
 
@@ -44,8 +45,25 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             if(_sendDataThread.ThreadState != Thread.eThreadStates.ThreadRunning)
                 _sendDataThread.Start();
-                
-            var rentalService = $"rent open member {CardReader.MemberId} spaces {spaceId}\r\n";
+            
+            var myStoreId = ControlSystem.MyStore.SPACE_ID;
+            var myStoreFront = ControlSystem.StoreFronts[myStoreId];
+            
+            StringBuilder sb = new StringBuilder();
+            sb.Append(myStoreId);
+
+            if (myStoreFront != null)
+            {
+                if (myStoreFront.AssignedWorkSpaces != null)
+                {
+                    foreach (var workSpace in myStoreFront.AssignedWorkSpaces)
+                    {
+                        sb.Append(workSpace.SpaceId);
+                    }
+                }
+            }
+            
+            var rentalService = $"rent open member {CardReader.MemberId} spaces {sb.ToString().ToLower()}\x0D\x0A";
             _dataTxQueue.Enqueue(rentalService);
             
             _dataTxEvent.Set();
@@ -53,7 +71,31 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         
         public static void EndRentalService(string spaceId)
         {
-            var rentalService = $"rent close member {CardReader.MemberId} spaces {spaceId}\r\n";
+            var myStoreId = ControlSystem.MyStore.SPACE_ID;
+            var myStoreFront = ControlSystem.StoreFronts[myStoreId];
+            
+            StringBuilder sb = new StringBuilder();
+            
+            if (spaceId == myStoreId)
+            {
+                sb.Append(myStoreId);
+                if (myStoreFront != null)
+                {
+                    if (myStoreFront.AssignedWorkSpaces != null)
+                    {
+                        foreach (var workSpace in myStoreFront.AssignedWorkSpaces)
+                        {
+                            sb.Append(workSpace.SpaceId);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                sb.Append(spaceId);
+            }
+
+            var rentalService = $"rent close member {CardReader.MemberId} spaces {sb.ToString().ToLower()}\x0D\x0A";
             _dataTxQueue.Enqueue(rentalService);
             
             _dataTxEvent.Set();
@@ -61,7 +103,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         public static void SetDigitalSignageMessage(string spaceId, string message)
         {
-            var digitalSignageService = $"display +{spaceId.ToLower()} \"{spaceId}\"\r\n";
+            var digitalSignageService = $"display +{spaceId.ToLower()} \"{message}\"\x0D\x0A";
             _dataTxQueue.Enqueue(digitalSignageService);
             
             _dataTxEvent.Set();
@@ -69,7 +111,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         
         public static void DeleteDigitalSignageMessage(string spaceId, string message)
         {
-            var digitalSignageService = $"display -{spaceId.ToLower()}\r\n";
+            var digitalSignageService = $"display -{spaceId.ToLower()}\x0D\x0A";
             _dataTxQueue.Enqueue(digitalSignageService);
             
             _dataTxEvent.Set();
@@ -86,13 +128,13 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             while (true)
             {
                 _dataTxEvent.Wait();
-                CrestronConsole.PrintLine("---------------------------------- Data Tx Event Set");
+                CrestronConsole.PrintLine("---------------------------------- QuirkyTech Data Tx Event Set");
                 if (_dataTxQueue.Count > 0)
                 {
                     var temp = _dataTxQueue.Dequeue();
                     if (temp.Length > 0)
                     {
-                        CrestronConsole.PrintLine($"Data is being sent: {temp}");
+                        CrestronConsole.PrintLine($"QuirkyTech Data is being sent: {temp}");
                         _client.SendData(temp);
                         ClientOnDataReceived(null, new MessageEventArgs(){Message = "Data OK"});
                     }

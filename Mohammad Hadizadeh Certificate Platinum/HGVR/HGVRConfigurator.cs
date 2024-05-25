@@ -131,12 +131,19 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum.HGVR
 
         public static void OpenWalls(ushort[] walls)
         {
+
             foreach (var wall in walls)
             {
                 CrestronConsole.PrintLine($"Opening wall {wall}");
                 _walls[wall] = true;
             }
-
+            
+            var myStore = ControlSystem.StoreFronts[ControlSystem.MyStore.SPACE_ID];
+            if (myStore.AssignedWorkSpaces == null || myStore.AssignedWorkSpaces.Count == 0)
+            {
+                CrestronConsole.PrintLine("No workspaces assigned to this store");
+                return;
+            }
             SendCommand();
         }
         
@@ -175,15 +182,54 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum.HGVR
 
         private static void SendCommand()
         {
-            var wallsBytes = _walls.Select(wall => wall.Value ? (byte)1 : (byte)0).ToArray();
-            var fansBytes = _fans.Select(fan => fan.Value ? (byte)1 : (byte)0).ToArray();
-            var command = new byte[Header.Length + Auth.Length + Req.Length + wallsBytes.Length + fansBytes.Length + Footer.Length];
+            // var wallsBytes = _walls.Select(wall => wall.Value ? (byte)1 : (byte)0).ToArray();
+            // var fansBytes = _fans.Select(fan => fan.Value ? (byte)1 : (byte)0).ToArray();
+            
+            byte wallsBytesLS = 0;
+            foreach (var wall in _walls.Where(w => w.Key <= 8))
+            {
+                if (wall.Value)
+                {
+                    wallsBytesLS |= (byte)(1 << (wall.Key - 1));
+                }
+            }
+            
+            byte wallsBytesMS = 0;
+            foreach (var wall in _walls.Where(w => w.Key <= 16 && w.Key > 8))
+            {
+                if (wall.Value)
+                {
+                    wallsBytesMS |= (byte)(1 << (wall.Key - 1));
+                }
+            }
+            
+            byte fansBytesLS = 0;
+            foreach (var fan in _fans.Where(f => f.Key <= 8))
+            {
+                if (fan.Value)
+                {
+                    fansBytesLS |= (byte)(1 << (fan.Key - 1));
+                }
+            }
+            
+            byte fansBytesMS = 0;
+            foreach (var fan in _fans.Where(f => f.Key <= 16 && f.Key > 8))
+            {
+                if (fan.Value)
+                {
+                    fansBytesMS |= (byte)(1 << (fan.Key - 1));
+                }
+            }
+            
+            var command = new byte[Header.Length + Auth.Length + Req.Length + 4 + Footer.Length];
             Array.Copy(Header, 0, command, 0, Header.Length);
             Array.Copy(Auth, 0, command, Header.Length, Auth.Length);
             Array.Copy(Req, 0, command, Header.Length + Auth.Length, Req.Length);
-            Array.Copy(wallsBytes, 0, command, Header.Length + Auth.Length + Req.Length, wallsBytes.Length);
-            Array.Copy(fansBytes, 0, command, Header.Length + Auth.Length + Req.Length + wallsBytes.Length, fansBytes.Length);
-            Array.Copy(Footer, 0, command, Header.Length + Auth.Length + Req.Length + wallsBytes.Length + fansBytes.Length, Footer.Length);
+            command[Header.Length + Auth.Length + Req.Length] = wallsBytesLS;
+            command[Header.Length + Auth.Length + Req.Length + 1] = wallsBytesMS;
+            command[Header.Length + Auth.Length + Req.Length + 2] = fansBytesLS;
+            command[Header.Length + Auth.Length + Req.Length + 3] = fansBytesMS;
+            Array.Copy(Footer, 0, command, Header.Length + Auth.Length + Req.Length + 4, Footer.Length);
             
             // print the command to the console in Hex format   
             CrestronConsole.PrintLine($"Sending command: {BitConverter.ToString(command)}");

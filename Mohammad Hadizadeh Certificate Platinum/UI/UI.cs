@@ -329,7 +329,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                         // Order system
                         QuirkyTech.StartRentalService(ControlSystem.SpaceId);
-                        QuirkyTech.SetDigitalSignageMessage(ControlSystem.SpaceId, "Welcome to your space");
+                        QuirkyTech.SetDigitalSignageMessage(ControlSystem.SpaceId, CardReader.MemberName);
                     }
 
                     Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.StorefrontsPage].BoolValue = true;
@@ -360,6 +360,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].SpaceMode = SpaceMode.Available;
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberId = "";
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberName = "";
+                    
+                    // Order system
+                    QuirkyTech.EndRentalService(ControlSystem.SpaceId);
+                    QuirkyTech.DeleteDigitalSignageMessage(ControlSystem.SpaceId, "Welcome to your space");
 
                     // Update status of the assigned workspaces to available
                     if (ControlSystem.StoreFronts[ControlSystem.SpaceId].AssignedWorkSpaces != null)
@@ -398,10 +402,6 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     HGVRConfigurator.TurnOffFans(ControlSystem.MyStore.Fans);
                     HGVRConfigurator.CloseWalls(ControlSystem.MyStore.Walls);
 
-                    // Order system
-                    QuirkyTech.EndRentalService(ControlSystem.SpaceId);
-                    QuirkyTech.DeleteDigitalSignageMessage(ControlSystem.SpaceId, "Welcome to your space");
-                    
                     foreach (var storesIpAddress in ControlSystem.StoresIpAddresses)
                     {
                         _inquiryRequest.UpdateStoreStatusRequest(storesIpAddress.ToString(),
@@ -501,6 +501,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOff].BoolValue = true;
                     }
                 );
+            
+            Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.OperatingPage].BoolValue = false;
+            Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.MessagePage].BoolValue = true;
+            Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.VPubLoginMessage].BoolValue = false;
         }
 
         private void LoginTimer_Elapsed()
