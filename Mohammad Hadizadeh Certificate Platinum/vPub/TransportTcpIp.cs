@@ -55,7 +55,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         private readonly CEvent _dataTxEvent;
         private readonly CTimer _dataTxTimer;
 
-        public TransportTcpIp(string address, int port, uint id)
+        public TransportTcpIp(string address, int port, uint id, bool autoConnect)
         {
             Address = address;
             Port = port;
@@ -64,7 +64,13 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             _dataTxEvent = new CEvent(true, false);
             _dataTxTimer = new CTimer(DataTxTimerCallback, null, 0, Timeout.Infinite);
 
-            Connect(address, port);
+            if(autoConnect)
+                Connect(address, port);
+        }
+        
+        public void Connect()
+        {
+            Connect(Address, Port);
         }
 
         private void DataTxTimerCallback(object o)
@@ -87,8 +93,16 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     _client.DisconnectFromServer();
                     _client.SocketStatusChange -= ClientOnSocketStatusChange;
                 }
-
-                _client.Dispose();
+                _client.SocketStatusChange += ClientOnSocketStatusChange;
+                
+                if (_connectionTimer != null)
+                {
+                    _connectionTimer.Dispose();
+                }
+                _connectionTimer = new CTimer(ConnectTimerCallback, null, 1000, 30000);
+                _client.ConnectToServer();
+                return;
+                // _client.Dispose();
             }
 
             if (_connectionTimer != null)

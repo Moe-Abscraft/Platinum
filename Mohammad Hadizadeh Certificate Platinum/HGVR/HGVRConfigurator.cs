@@ -37,7 +37,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum.HGVR
         public HGVRConfigurator(InquiryRequest inquiryRequest)
         {
             _inquiryRequest = inquiryRequest;
-            _client = new TransportTcpIp(Configurator.BuildingIpAddress, Configurator.BuildingPort, 1);
+            _client = new TransportTcpIp(Configurator.BuildingIpAddress, Configurator.BuildingPort, 1, true);
             _walls = new Dictionary<ushort, bool>()
             {
                 { 8, false },
@@ -232,7 +232,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum.HGVR
             Array.Copy(Footer, 0, command, Header.Length + Auth.Length + Req.Length + 4, Footer.Length);
             
             // print the command to the console in Hex format   
-            CrestronConsole.PrintLine($"Sending command: {BitConverter.ToString(command)}");
+            CrestronConsole.PrintLine($"Sending command: [{BitConverter.ToString(command).Replace("-", "][")}]");
             OnBuildingStatusChanged(new BuildingStatusArgs() {Walls = _walls, Fans = _fans});
             _client.SendBytes(command);
         }

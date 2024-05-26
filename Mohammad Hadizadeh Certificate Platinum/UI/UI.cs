@@ -44,7 +44,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             _inquiryRequest = inquiryRequest;
             _roomConfigurator = new HGVRConfigurator(_inquiryRequest);
-            _quirkyTech = new QuirkyTech();
+            _quirkyTech = new QuirkyTech(cs);
 
             Tsw770 = new Tsw770(0x2A, cs);
             Tsw770.SigChange += _tsw770_SigChange;
