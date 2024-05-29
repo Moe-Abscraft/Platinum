@@ -446,6 +446,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.VPubLoginMessage].BoolValue = true;
                     RentalService.TotalCharge = 0;
                     // ControlSystem.ReservationStatus = false;
+                    
                     CrestronConsole.PrintLine("Logged Out");
                 }
                 catch (Exception e)
@@ -463,6 +464,16 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 {
                     if (!b) return;
                     UI_Actions.TogglePopup(Tsw770, popup);
+
+                    if (popup == UI_Actions.PopupsJoinGroup["Message_KP"][0])
+                    {
+                        if (CardReader.CardNumber > 0)
+                        {
+                            CardReader.CardNumber = 0;
+                            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.KeypadInput].StringValue =
+                                CardReader.CardNumber > 0 ? CardReader.CardNumber.ToString() : "";
+                        }
+                    }
                 });
             }
 
