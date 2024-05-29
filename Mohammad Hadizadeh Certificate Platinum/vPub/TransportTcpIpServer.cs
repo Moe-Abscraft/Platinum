@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
@@ -17,7 +18,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         public event EventHandler<MessageEventArgs> DataReceived = delegate { };
         protected virtual void OnDataReceived(MessageEventArgs e)
         {
-            DataReceived(this, e);
+            DataReceived?.Invoke(this, e);
         }
         
         public TransportTcpIpServer()
@@ -30,7 +31,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         private void ServerConnectedCallback(TCPServer mytcpserver, uint clientindex)
         {
-            // CrestronConsole.PrintLine($"Client connected:{clientindex}");
+            CrestronConsole.PrintLine($"Card Reader Server Client connected:{clientindex}");
             if (clientindex != 0)
             {
                 _server.ReceiveDataAsync(clientindex, ServerReceiveDataCallback);
@@ -41,26 +42,48 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         private void ServerReceiveDataCallback(TCPServer mytcpserver, uint clientindex, int numberofbytesreceived)
         {
-            if (numberofbytesreceived > 0)
+            try
             {
-                var data = new byte[numberofbytesreceived];
-                Array.Copy(mytcpserver.IncomingDataBuffer, data, numberofbytesreceived);
-                var message = Encoding.ASCII.GetString(data);
-                OnDataReceived(new MessageEventArgs(){Message = message});
-                _server.SendDataAsync(clientindex, Encoding.ASCII.GetBytes($"OK:{message}"), numberofbytesreceived, ServerDataSentCallback);
+                if (numberofbytesreceived > 0)
+                {
+                    var data = new byte[numberofbytesreceived];
+                    Array.Copy(mytcpserver.IncomingDataBuffer, data, numberofbytesreceived);
+                    var message = Encoding.ASCII.GetString(data);
+                    
+                    if (message.All(char.IsDigit))
+                    {
+                        CrestronConsole.PrintLine($"Card Reader Server Data received:{message}");
+                    }
+                    else
+                    {
+                        var base64EncodedBytes = Convert.FromBase64String(message);
+                        message = Encoding.ASCII.GetString(base64EncodedBytes);
+                        CrestronConsole.PrintLine($"Card Reader Server Data received:{message}");
+                    }
+                    
+                    OnDataReceived(new MessageEventArgs() { Message = message });
+                    _server.SendDataAsync(clientindex, Encoding.ASCII.GetBytes($"OK"), 2, ServerDataSentCallback);
+                }
             }
-            
-            _server.ReceiveDataAsync(clientindex, ServerReceiveDataCallback);
+            catch (Exception e)
+            {
+                CrestronConsole.PrintLine($"Error in ServerReceiveDataCallback: {e.Message}");
+            }
+            finally
+            {
+                _server.ReceiveDataAsync(clientindex, ServerReceiveDataCallback);
+
+            }
         }
 
         private void ServerDataSentCallback(TCPServer mytcpserver, uint clientindex, int numberofbytessent)
         {
-            // CrestronConsole.PrintLine($"Data sent:{numberofbytessent} bytes");
+            CrestronConsole.PrintLine($"Data sent:{numberofbytessent} bytes");
         }
 
         private void ServerOnSocketStatusChange(TCPServer mytcpserver, uint clientindex, SocketStatus serversocketstatus)
         {
-            CrestronConsole.PrintLine($"Socket status changed:{serversocketstatus}");
+            CrestronConsole.PrintLine($"Card Reader Server Socket status changed:{serversocketstatus}");
         }
         
         public void HandleLinkUp()

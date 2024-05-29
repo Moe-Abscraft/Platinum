@@ -243,6 +243,16 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 _dataTxTimer.Reset(500);
             }
         }
+        
+        public void Dispose()
+        {
+            _client.DisconnectFromServer();
+            _client.SocketStatusChange -= ClientOnSocketStatusChange;
+            _client.Dispose();
+            _connectionTimer.Dispose();
+            _dataTxTimer.Dispose();
+            _dataTxQueue.Dispose();
+        }
     }
 
     public class MessageEventArgs : EventArgs

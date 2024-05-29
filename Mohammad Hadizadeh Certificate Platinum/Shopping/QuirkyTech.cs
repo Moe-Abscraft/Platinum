@@ -47,7 +47,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         
         private void ClientOnConnectionError(object sender, MessageEventArgs e)
         {
-            CrestronConsole.PrintLine($"QuirkyTech Connection Error: {e.Message}");
+            // CrestronConsole.PrintLine($"QuirkyTech Connection Error: {e.Message}");
             if (e.Message.Contains("Connected"))
             {
                 _connectionStatus = eConnectionStatus.Connected;
@@ -199,6 +199,15 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     }
                 }
             }
+        }
+        
+        public void Dispose()
+        {
+            _client.DataReceived -= ClientOnDataReceived;
+            _client.ConnectionError -= ClientOnConnectionError;
+            _sendDataTimer.Stop();
+            _sendDataThread.Abort();
+            _client?.Dispose();
         }
     }
 }

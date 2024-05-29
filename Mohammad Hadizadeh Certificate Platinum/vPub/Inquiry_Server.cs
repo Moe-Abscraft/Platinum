@@ -76,7 +76,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             // CrestronConsole.PrintLine("Received Request");
             // CrestronConsole.PrintLine(args.Context.Request.HttpMethod);
-            // CrestronConsole.PrintLine(args.Context.Request.RouteData.Route.Name);
+            CrestronConsole.PrintLine(args.Context.Request.RouteData.Route.Name);
         }
     }
 

@@ -39,12 +39,15 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         private HGVRConfigurator _roomConfigurator;
         private QuirkyTech _quirkyTech;
         public static bool QuirkyTechStatus = false;
+        private TransportTcpIpServer _cardReaderServer;
 
-        public UI(ControlSystem cs, InquiryRequest inquiryRequest)
+        public UI(ControlSystem cs, InquiryRequest inquiryRequest, TransportTcpIpServer cardReaderServer)
         {
             _inquiryRequest = inquiryRequest;
             _roomConfigurator = new HGVRConfigurator(_inquiryRequest);
             _quirkyTech = new QuirkyTech(cs);
+            _cardReaderServer = cardReaderServer;
+            _cardReaderServer.DataReceived += _cardReaderServer_DataReceived;
 
             Tsw770 = new Tsw770(0x2A, cs);
             Tsw770.SigChange += _tsw770_SigChange;
@@ -95,32 +98,39 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             };
         }
 
+        private void _cardReaderServer_DataReceived(object sender, MessageEventArgs e)
+        {
+            CrestronConsole.PrintLine($"Member Card Number: {e.Message}");
+            ControlSystem.ReservationStatus = false;
+            var memberInfo = _cardReader.GetMemberInfo(ushort.Parse(e.Message));
+            UI_Actions.KeypadInput("", "Misc_1");
+            CrestronConsole.PrintLine($"Member Info: {memberInfo}");
+
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberAccessMessage].StringValue =
+                CardReader.MembershipIsValid ? "Access Granted" : "Access Denied";
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberName].StringValue = CardReader.MemberName;
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberPubId].StringValue = CardReader.MemberId;
+            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.MemberExpireDate].StringValue =
+                "Exp. " + CardReader.MemberExpiryDateTime.ToString("dd MMMM yyyy");
+        }
+
         private void WorkspaceStatusHandlerOnWorkspaceStatusChangedEvent(object sender, Space args)
         {
-            // CrestronConsole.PrintLine(
-            //     $"Received Status Change Event for Workspace {args.SpaceId} with Mode {args.SpaceMode}");
-
-            // ControlSystem.WorkSpaces[args.SpaceId] = null;
-            // ControlSystem.WorkSpaces[args.SpaceId] = new WorkSpace()
-            // {
-            //     SpaceId = args.SpaceId, 
-            //     SpaceMode = args.MemberId == CardReader.MemberId ? SpaceMode.MySpace : args.SpaceMode, 
-            //     MemberId = args.MemberId, 
-            //     MemberName = args.MemberName
-            // };
-
             var workSpace = ControlSystem.WorkSpaces[args.SpaceId];
             workSpace.SpaceMode = args.MemberId == CardReader.MemberId ? SpaceMode.MySpace : args.SpaceMode;
             workSpace.MemberId = args.MemberId;
             workSpace.MemberName = args.MemberName;
             workSpace.AssignedStoreFrontId = ((WorkSpace)args).AssignedStoreFrontId;
-
-            CrestronConsole.PrintLine($"Workspace Mode: {ControlSystem.WorkSpaces[args.SpaceId].SpaceMode}");
-
-            UI_Actions.SetStoreMode(Tsw770, args.SpaceId);
-
             // check the queue for the new assignment
 
+            Task.Run(() => AssignWorkspaceFromQueue(workSpace));
+
+            CrestronConsole.PrintLine($"Workspace Mode: {ControlSystem.WorkSpaces[args.SpaceId].SpaceMode}");
+            UI_Actions.SetStoreMode(Tsw770, args.SpaceId);
+        }
+
+        private void AssignWorkspaceFromQueue(WorkSpace workSpace)
+        {
             if (workSpace.SpaceMode == SpaceMode.Available)
             {
                 if (workSpace.StorefrontQueue.Any())
@@ -660,6 +670,17 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
             Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.TotalCharge].StringValue =
                 RentalService.GetTotalCharge(_loginTimer).ToString(CultureInfo.InvariantCulture);
+        }
+
+        public void Dispose()
+        {
+            _cardReaderServer.DataReceived -= _cardReaderServer_DataReceived;
+            Tsw770.SigChange -= _tsw770_SigChange;
+            Tsw770.OnlineStatusChange -= _tsw770_OnlineStatusChange;
+            Tsw770.Dispose();
+            _timer?.Dispose();
+            _quirkyTech?.Dispose();
+            _cancellationTokenSource?.Dispose();
         }
     }
 }
