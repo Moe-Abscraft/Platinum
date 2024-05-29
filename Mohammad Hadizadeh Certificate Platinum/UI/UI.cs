@@ -96,6 +96,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.Temperature].StringValue =
                     args.Temperature.ToString(CultureInfo.InvariantCulture);
             };
+            
+            Initialize();
         }
 
         private void _cardReaderServer_DataReceived(object sender, MessageEventArgs e)
@@ -116,17 +118,24 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         private void WorkspaceStatusHandlerOnWorkspaceStatusChangedEvent(object sender, Space args)
         {
-            var workSpace = ControlSystem.WorkSpaces[args.SpaceId];
-            workSpace.SpaceMode = args.MemberId == CardReader.MemberId ? SpaceMode.MySpace : args.SpaceMode;
-            workSpace.MemberId = args.MemberId;
-            workSpace.MemberName = args.MemberName;
-            workSpace.AssignedStoreFrontId = ((WorkSpace)args).AssignedStoreFrontId;
-            // check the queue for the new assignment
+            try
+            {
+                var workSpace = ControlSystem.WorkSpaces[args.SpaceId];
+                workSpace.SpaceMode = args.MemberId == CardReader.MemberId ? SpaceMode.MySpace : args.SpaceMode;
+                workSpace.MemberId = args.MemberId;
+                workSpace.MemberName = args.MemberName;
+                workSpace.AssignedStoreFrontId = ((WorkSpace)args).AssignedStoreFrontId;
+                // check the queue for the new assignment
 
-            Task.Run(() => AssignWorkspaceFromQueue(workSpace));
+                Task.Run(() => AssignWorkspaceFromQueue(workSpace));
 
-            CrestronConsole.PrintLine($"Workspace Mode: {ControlSystem.WorkSpaces[args.SpaceId].SpaceMode}");
-            UI_Actions.SetStoreMode(Tsw770, args.SpaceId);
+                CrestronConsole.PrintLine($"Workspace Mode: {ControlSystem.WorkSpaces[args.SpaceId].SpaceMode}");
+                UI_Actions.SetStoreMode(Tsw770, args.SpaceId);
+            }
+            catch (Exception e)
+            {
+                CrestronConsole.PrintLine($"Error in WorkspaceStatusHandlerOnWorkspaceStatusChangedEvent: {e.Message}");
+            }
         }
 
         private void AssignWorkspaceFromQueue(WorkSpace workSpace)
@@ -137,7 +146,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 {
                     var nextStorefrontId = workSpace.StorefrontQueue.Dequeue();
                     var nextStorefront = ControlSystem.StoreFronts[nextStorefrontId];
-                    RentalService.RentSpace(nextStorefront, workSpace, _inquiryRequest);
+                    if(ControlSystem.MyStore.SPACE_ID == nextStorefrontId)
+                        RentalService.RentSpace(nextStorefront, workSpace, _inquiryRequest);
                 }
             }
         }
@@ -168,10 +178,13 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
         private void _tsw770_OnlineStatusChange(GenericBase currentdevice, OnlineOfflineEventArgs args)
         {
+            
+        }
+
+        private void Initialize()
+        {
             _timer = new CTimer(UpdateTime, null, 0, 1000);
-
-            if (!args.DeviceOnLine) return;
-
+            
             Tsw770.BooleanOutput[(ushort)UI_Actions.DigitalJoins.VPubLoginAck].UserObject = new List<Action<bool>>();
 
             // Serial Joins
@@ -516,7 +529,6 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.MessagePage].BoolValue = true;
             Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.VPubLoginMessage].BoolValue = false;
         }
-
         private void LoginTimer_Elapsed()
         {
             while (_loginTimer.IsRunning)
