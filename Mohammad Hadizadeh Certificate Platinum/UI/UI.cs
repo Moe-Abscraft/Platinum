@@ -125,6 +125,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 workSpace.MemberId = args.MemberId;
                 workSpace.MemberName = args.MemberName;
                 workSpace.AssignedStoreFrontId = ((WorkSpace)args).AssignedStoreFrontId;
+                
+                if(args.MemberId.Length == 0 || CardReader.MemberId.Length == 0)
+                {
+                    workSpace.SpaceMode = args.SpaceMode;
+                }
                 // check the queue for the new assignment
 
                 Task.Run(() => AssignWorkspaceFromQueue(workSpace));
@@ -169,6 +174,11 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 MemberName = args.MemberName,
                 Area = area
             };
+            
+            if(args.MemberId.Length == 0 || CardReader.MemberId.Length == 0)
+            {
+                ControlSystem.StoreFronts[args.SpaceId].SpaceMode = args.SpaceMode;
+            }
 
             CrestronConsole.PrintLine($"Space Mode: {ControlSystem.StoreFronts[args.SpaceId].SpaceMode}");
 
@@ -275,6 +285,17 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 b =>
                 {
                     if (!b) return;
+                    
+                    foreach (var shoppingItem in Shopping.ShoppingCart)
+                    {
+                        RentalService.TotalShoppingCharge += float.Parse(shoppingItem.PRICE);
+                    }
+                    var newCharge = RentalService.GetTotalCharge(_loginTimer);
+                    Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.TotalCharge].StringValue = newCharge.ToString(CultureInfo.InvariantCulture);
+                    CrestronConsole.PrintLine($"Charge: {newCharge}");
+                    
+                    // RentalService.TotalShoppingCharge = 0;
+                    
                     QuirkyTech.SendOrder(Shopping.ShoppingCart);
                     Shopping.ShoppingCart.Clear();
                     _viewCart = false;
@@ -299,6 +320,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.OperatingPage].BoolValue = false;
                         Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.MessagePage].BoolValue = true;
                         ControlSystem.ReservationStatus = false;
+                        CardReader.ResetCard();
                         return;
                     }
                     CrestronConsole.PrintLine("VPubLoginAck");
@@ -310,6 +332,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.OperatingPage].BoolValue = true;
                         UI_Actions.TogglePopup(Tsw770, UI_Actions.PopupsJoinGroup["ClosePopUps"][0]);
                         UI_Actions.TogglePopup(Tsw770, UI_Actions.PopupsJoinGroup["Operation_Storefronts"][0]);
+                        Tsw770.BooleanInput[UI_Actions.PopupsJoinGroup["Operation_Storefronts"][0]].BoolValue = true;
 
                         _startLoginTime = DateTime.Now;
                         if (_loginTimer != null)
@@ -360,7 +383,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     Tsw770.UShortInput[(ushort)UI_Actions.AnalogJoins.ShoppingItemsMode].UShortValue = 1;
                     Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOn].BoolValue = true;
                     Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOff].BoolValue = false;
-                    UpdateShoppingListView(_viewCart, string.Empty);
+                    
                     ControlSystem.ReservationStatus = true;
                 }
                 catch (Exception e)
@@ -383,7 +406,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].SpaceMode = SpaceMode.Available;
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberId = "";
                     ControlSystem.StoreFronts[ControlSystem.SpaceId].MemberName = "";
-                    
+
                     // Order system
                     QuirkyTech.EndRentalService(ControlSystem.SpaceId);
                     QuirkyTech.DeleteDigitalSignageMessage(ControlSystem.SpaceId, "Welcome to your space");
@@ -446,7 +469,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     Tsw770.BooleanInput[(ushort)UI_Actions.SubpageJoins.VPubLoginMessage].BoolValue = true;
                     RentalService.TotalCharge = 0;
                     // ControlSystem.ReservationStatus = false;
-                    
+                    // CardReader.ResetCard();
                     CrestronConsole.PrintLine("Logged Out");
                 }
                 catch (Exception e)
@@ -469,11 +492,17 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                     {
                         if (CardReader.CardNumber > 0)
                         {
-                            CardReader.CardNumber = 0;
-                            Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.KeypadInput].StringValue =
-                                CardReader.CardNumber > 0 ? CardReader.CardNumber.ToString() : "";
+                            // CardReader.CardNumber = 0;
+                            CardReader.ResetCard();
                         }
+                        Tsw770.StringInput[(ushort)UI_Actions.SerialJoins.KeypadInput].StringValue =
+                            CardReader.CardNumber > 0 ? CardReader.CardNumber.ToString() : "";
                     }
+                    
+                    _vendor = string.Empty;
+                    Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOn].BoolValue = true;
+                    Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOff].BoolValue = false;
+                    UpdateShoppingListView(_viewCart, string.Empty);
                 });
             }
 
@@ -522,6 +551,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         _vendor = string.Empty;
                         Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOn].BoolValue = true;
                         Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOff].BoolValue = false;
+                        UpdateShoppingListView(_viewCart, string.Empty);
                     }
                 );
 
@@ -533,6 +563,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                         _vendor = string.Empty;
                         Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOn].BoolValue = false;
                         Tsw770.BooleanInput[(ushort)UI_Actions.DigitalJoins.ShoppingListFilterOff].BoolValue = true;
+                        // UpdateShoppingListView(_viewCart, string.Empty);
                     }
                 );
             

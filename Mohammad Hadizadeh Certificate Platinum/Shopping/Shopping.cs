@@ -33,7 +33,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             if (ShoppingCart == null) ShoppingCart = new List<Retail>();
             var shoppingItem = ShoppingItems[item];
             ShoppingCart.Add(shoppingItem);
-            RentalService.TotalCharge += float.Parse(shoppingItem.PRICE);
+            //RentalService.TotalCharge += float.Parse(shoppingItem.PRICE);
             return ShoppingCart;
         }
         
@@ -42,7 +42,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             if (ShoppingCart == null) ShoppingCart = new List<Retail>();
             var shoppingItem = ShoppingItems.Where(item => item.VENDOR == vendor).ToList()[itemIndex];
             ShoppingCart.Add(shoppingItem);
-            RentalService.TotalCharge += float.Parse(shoppingItem.PRICE);
+            //RentalService.TotalCharge += float.Parse(shoppingItem.PRICE);
             return ShoppingCart;
         }
         
@@ -51,7 +51,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             if (ShoppingCart == null) return null;
             var shoppingItem = ShoppingCart[item];
             ShoppingCart.RemoveAt(item);
-            RentalService.TotalCharge -= float.Parse(shoppingItem.PRICE);
+            //RentalService.TotalCharge -= float.Parse(shoppingItem.PRICE);
             return ShoppingCart;
         }
         

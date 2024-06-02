@@ -220,6 +220,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 catch (Exception e)
                 {
                     OnConnectionError(new MessageEventArgs() { Message = "Error dequeue send data", Id = _id });
+                    CrestronConsole.PrintLine($"Error dequeue send data: {e.Message}");
                 }
             //}
         }
@@ -246,12 +247,16 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         
         public void Dispose()
         {
-            _client.DisconnectFromServer();
-            _client.SocketStatusChange -= ClientOnSocketStatusChange;
-            _client.Dispose();
-            _connectionTimer.Dispose();
-            _dataTxTimer.Dispose();
-            _dataTxQueue.Dispose();
+            _client?.DisconnectFromServer();
+            if (_client != null)
+            {
+                _client.SocketStatusChange -= ClientOnSocketStatusChange;
+                _client?.Dispose();
+            }
+
+            _connectionTimer?.Dispose();
+            _dataTxTimer?.Dispose();
+            _dataTxQueue?.Dispose();
         }
     }
 

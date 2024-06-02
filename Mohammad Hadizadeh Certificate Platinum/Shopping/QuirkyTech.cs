@@ -20,7 +20,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         
         private eConnectionStatus _connectionStatus = eConnectionStatus.Disconnected;
 
-        private List<ThreeSeriesTcpIpEthernetIntersystemCommunications> _otherConnections;
+        // private List<ThreeSeriesTcpIpEthernetIntersystemCommunications> _otherConnections;
         private delegate void SetQuirkyBusyDelegate(bool value);
         private SetQuirkyBusyDelegate _setQuirkyBusyDelegate;
         
@@ -205,8 +205,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         {
             _client.DataReceived -= ClientOnDataReceived;
             _client.ConnectionError -= ClientOnConnectionError;
-            _sendDataTimer.Stop();
-            _sendDataThread.Abort();
+            _sendDataTimer?.Stop();
+            _sendDataThread?.Abort();
             _client?.Dispose();
         }
     }

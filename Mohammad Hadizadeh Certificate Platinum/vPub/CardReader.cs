@@ -30,6 +30,16 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             MemberIsExpired(this, e);
         }
 
+        public static void ResetCard()
+        {
+            CrestronConsole.PrintLine("Resetting the card reader.");
+            CardNumber = 0;
+            MemberId = "";
+            MemberName = "";
+            _memberExpiryDate = "";
+            MemberExpiryDateTime = DateTime.MinValue;
+            MembershipIsValid = false;
+        }
         public string GetMemberInfo(ushort cardNumber)
         {
             var memberInfo = "";

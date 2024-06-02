@@ -144,7 +144,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                                 ControlSystem.WorkSpaces = new WorkSpaces(Stores.Count(s => !s.IS_STOREFRONT));
 
                                 var i = 0;
-                                var j = 0;
+                                //var j = 0;
                                 foreach (var store in Stores)
                                 {
                                     CrestronConsole.PrintLine($"Store: {store.SPACE_ID}");
