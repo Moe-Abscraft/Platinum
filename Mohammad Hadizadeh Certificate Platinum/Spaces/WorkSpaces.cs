@@ -93,25 +93,25 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
             }
         }
         
+        [JsonIgnore] private bool _canBeAssigned = false;
         public string GetActionText()
         {
-            var canBeAssigned = false;
             if (ControlSystem.StoreFronts[ControlSystem.MyStore.SPACE_ID].AssignedWorkSpaces != null)
             {
                 foreach (var workSpace in ControlSystem.StoreFronts[ControlSystem.MyStore.SPACE_ID].AssignedWorkSpaces)
                 {
-                    if(AdjacentWorkSpaces.Contains(workSpace.SpaceId)) canBeAssigned = true;
+                    if(AdjacentWorkSpaces.Contains(workSpace.SpaceId)) _canBeAssigned = true;
                 }
             }
             
-            if(AdjacentStorefrontId == ControlSystem.MyStore.SPACE_ID) canBeAssigned = true;
+            if(AdjacentStorefrontId == ControlSystem.MyStore.SPACE_ID) _canBeAssigned = true;
 
             switch (SpaceMode)
             {
                 case SpaceMode.MySpace:
                     return "Press to REMOVE WorkSpace";
                 case SpaceMode.Available:
-                    return canBeAssigned ? "Press to ADD WorkSpace" : "Available";
+                    return _canBeAssigned ? "Press to ADD WorkSpace" : "Available";
                 case SpaceMode.Occupied:
                     return !StorefrontQueue.Contains(ControlSystem.SpaceId) ? "Press to QUEUE WorkSpace" : "Press to REMOVE QUEUE WorkSpace";
                 case SpaceMode.Closed:
@@ -128,7 +128,7 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 case SpaceMode.MySpace:
                     return MemberName;
                 case SpaceMode.Available:
-                    return "Available";
+                    return _canBeAssigned ? "Available" : "";
                 case SpaceMode.Occupied:
                     return MemberName;
                 case SpaceMode.Closed:
