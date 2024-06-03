@@ -210,6 +210,8 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
                 {
                     // _dataTxEvent.Wait();
                     //if (_dataTxQueue.Count <= 0) continue;
+                    if(_dataTxQueue == null) return;
+                    if (_dataTxQueue.Count <= 0) return;
                     string temp = _dataTxQueue.Dequeue();
                     if (temp.Length > 0)
                     {

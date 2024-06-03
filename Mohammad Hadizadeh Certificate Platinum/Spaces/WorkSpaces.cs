@@ -1,4 +1,6 @@
-﻿using Crestron.SimplSharp;
+﻿using System.Linq;
+using Crestron.SimplSharp;
+using Crestron.SimplSharp.Ssh.Common;
 using Newtonsoft.Json;
 
 namespace Mohammad_Hadizadeh_Certificate_Platinum
@@ -93,12 +95,23 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
         
         public string GetActionText()
         {
+            var canBeAssigned = false;
+            if (ControlSystem.StoreFronts[ControlSystem.MyStore.SPACE_ID].AssignedWorkSpaces != null)
+            {
+                foreach (var workSpace in ControlSystem.StoreFronts[ControlSystem.MyStore.SPACE_ID].AssignedWorkSpaces)
+                {
+                    if(AdjacentWorkSpaces.Contains(workSpace.SpaceId)) canBeAssigned = true;
+                }
+            }
+            
+            if(AdjacentStorefrontId == ControlSystem.MyStore.SPACE_ID) canBeAssigned = true;
+
             switch (SpaceMode)
             {
                 case SpaceMode.MySpace:
                     return "Press to REMOVE WorkSpace";
                 case SpaceMode.Available:
-                    return "Press to ADD WorkSpace";
+                    return canBeAssigned ? "Press to ADD WorkSpace" : "Available";
                 case SpaceMode.Occupied:
                     return !StorefrontQueue.Contains(ControlSystem.SpaceId) ? "Press to QUEUE WorkSpace" : "Press to REMOVE QUEUE WorkSpace";
                 case SpaceMode.Closed:

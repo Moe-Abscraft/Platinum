@@ -136,6 +136,10 @@ namespace Mohammad_Hadizadeh_Certificate_Platinum
 
                 CrestronConsole.PrintLine($"Workspace Mode: {ControlSystem.WorkSpaces[args.SpaceId].SpaceMode}");
                 UI_Actions.SetStoreMode(Tsw770, args.SpaceId);
+                for (int i = 1; i < 7; i++)
+                {
+                    UI_Actions.SetStoreMode(Tsw770, i.ToString());
+                }
             }
             catch (Exception e)
             {
